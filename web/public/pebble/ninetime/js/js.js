@@ -328,10 +328,6 @@ function change(obj) {
         case 'weather-provider':
             if (partnum != settings.weatherProvider) {
                 settings.weatherProvider=partnum;
-                obj=document.getElementById('weather-api-status');
-                if (obj) obj.innerHTML='';
-                removeClassname(obj,"status-ok");
-                removeClassname(obj,"status-error");
                 obj=document.getElementById('weather-city-status');
                 if (obj) obj.innerHTML='';
                 removeClassname(obj,"status-ok");
@@ -360,25 +356,12 @@ function change(obj) {
             foundFaceType=true;
             break;
         case 'condition-language':
-            value=obj.value*1;
+            value=obj.value;
             if (value != settings.weatherSettings[settings.weatherProvider].language) {
                 settings.weatherSettings[settings.weatherProvider].language=value;
                 needRedraw=true;
                 weatherChanged();
             }
-            foundFaceType=true;
-            break;
-        case 'weather-api-key-check':
-            weatherApiKeyCheck();
-            foundFaceType=true;
-            break;
-        case 'weather-pmkey-check':
-            pmkeyCheck();
-            foundFaceType=true;
-            break;
-        case 'weather-api-key-delete':
-            weatherApiKeyDelete();
-            weatherChanged();
             foundFaceType=true;
             break;
         case 'weather-city-check':

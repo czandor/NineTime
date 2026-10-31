@@ -4,7 +4,8 @@ Pebble óraszámlap, telefonos JavaScript kísérőkóddal és PHP beállítóol
 A rendezett órás forrás alapja az **1.92-es verzió**; a webes rész az utólag letöltött
 `www` szervermentésből származik.
 
-Ez a rendezés és a titkok kiemelése. A Pebble Time 2-port még nincs megvalósítva.
+A jelenlegi **2.00** az időjárás-szolgáltatók cseréje és a régi kulcskezelés takarítása.
+A Pebble Time 2-port a **3.xx** verzióhoz készül majd.
 
 ## Hol mit találsz?
 
@@ -33,11 +34,11 @@ Copy-Item web/config/config.example.php web/config/config.local.php
 Copy-Item watchface/config.example.json watchface/config.local.json
 ~~~
 
-A `web/config/config.local.php` fájlba kerül az adatbázis elérése és a szerveroldali
-időjáráskulcsok. A `watchface/config.local.json` **csak a nyilvános szervercímet**
+A `web/config/config.local.php` fájlba kerül az adatbázis elérése.
+Az időjáráshoz nem kell kulcs vagy regisztráció. A `watchface/config.local.json` **csak a nyilvános szervercímet**
 tartalmazza, például a beállítóoldalt kiszolgáló webhely `/pebble` útvonalát.
 A két helyen megadott cím legyen azonos, és telefonról is elérhető.
-Adatbázis-jelszó és közös szolgáltatói kulcs nem kerülhet az órás/telefonos csomagba.
+Adatbázis-jelszó nem kerülhet az órás/telefonos csomagba.
 
 ~~~powershell
 node tools/configure-watchface.cjs
@@ -59,8 +60,8 @@ php -S 127.0.0.1:8000 -t web/public
 ~~~
 
 A nyitóoldal: `http://127.0.0.1:8000/pebble/ninetime/`.
-Adatbázis nélkül az előnézet megnyitható, de a mentés/betöltés és a szerveres
-szolgáltatásokhoz adatbázis szükséges. A régi webes kód éles üzembe helyezése
+Adatbázis nélkül az előnézet és az időjárás is működik. A mentés/betöltés és az egyéni
+információs kérések adatbázist használnak. A régi webes kód éles üzembe helyezése
 előtt lásd a `SECURITY.md` és a `docs/SETUP.md` megjegyzéseit.
 
 ## Órás rész fordítása
@@ -73,7 +74,7 @@ pebble build
 ~~~
 
 A célplatformok jelenleg az eredeti `aplite`, `basalt`, `chalk`, `diorite` platformok.
-A PBT2/Emery elrendezése külön következő feladat.
+A PBT2/Emery elrendezése a 3.xx verzió külön következő feladata.
 
 ## GitHubra szánt fájlok ellenőrzése
 

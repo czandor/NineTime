@@ -14,6 +14,7 @@ function hideLoadSave() {
 }
 
 function saveData(slot) {
+  normalizeWeatherSettings();
   if (!slot) slot=0;
   if(slot){
     obj=document.getElementById('slotstatus-'+slot);
@@ -143,7 +144,7 @@ function loadData(slot) {
   }
 }
 function setSettingsIntegrity() {
-
+    normalizeWeatherSettings();
     ds=JSON.parse(defaultSettings);
     copyMissingElementsObjects(ds,settings);
 }

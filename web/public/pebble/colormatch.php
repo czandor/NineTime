@@ -191,7 +191,6 @@ foreach($pebblecolors as $bgId=>$bgColor){
 
 
 
-//$SQL="select id,woeid from pebble.weather_woeids where latitude = ".round($latitude,6)." and longitude = ".round($longitude,6)."";
   //  if($row=mysqli_fetch_object(mysqli_query($link,$SQL))){
 
 

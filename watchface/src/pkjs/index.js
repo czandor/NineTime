@@ -9,9 +9,7 @@ function initStorage(force){
   if(force || localStorage.getItem('lastRequestType') === null) localStorage.setItem('lastRequestType','0');
   if(force || localStorage.getItem('weatherDownloaded') === null) localStorage.setItem('weatherDownloaded','0'); //0: download not finished, 1: download succesfully, 2: download error
   if(force || localStorage.getItem('infoDownloaded') === null) localStorage.setItem('infoDownloaded','0'); //0: download not finished, 1: download succesfully, 2: download error
-  if(force || localStorage.getItem('weatherLastDownload') === null) localStorage.setItem('weatherLastDownload','0'); // current weather minimum sync 3 minutes
-  if(force || localStorage.getItem('weatherLastURL') === null) localStorage.setItem('weatherLastURL',''); // current weather last url for detect same position for minimum sync 1 hour
-  if(force || localStorage.getItem('weatherForecastLastDownload') === null) localStorage.setItem('weatherForecastLastDownload','0'); // forecast need to download every 3 hours
+  if(force || localStorage.getItem('weatherLastDownload') === null) localStorage.setItem('weatherLastDownload','0'); // current weather minimum sync 15 minutes
   if(force || localStorage.getItem('locationLastDownload') === null) localStorage.setItem('locationLastDownload','0'); // forecast need to download every 3 hours
   if(force || localStorage.getItem('locationLastPosJSON') === null) localStorage.setItem('locationLastPosJSON',''); // forecast need to download every 3 hours
     
@@ -38,11 +36,10 @@ function initStorage(force){
   if(force || localStorage.getItem('configDaynames') === null) localStorage.setItem('configDaynames',"VAS,HÉT,KED,SZE,CSÜ,PÉN,SZO"); //UTF8!!!!
 
   // configs from phone config page, use only in JS
-  if(force || localStorage.getItem('configWeatherProvider') === null) localStorage.setItem('configWeatherProvider',"owm"); // "":disable, "owm": OpenWeatherMap, "wu": WeatherUnderground
-  if(force || localStorage.getItem('configWeatherAPIKey') === null) localStorage.setItem('configWeatherAPIKey',"NINETIME_SERVER_OWM"); // "":OWM key
-  //if(force || localStorage.getItem('configWeatherAPIKey') === null) localStorage.setItem('configWeatherAPIKey',"NINETIME_SERVER_WU"); // "":WU key
+  if(force || localStorage.getItem('configWeatherProvider') === null) localStorage.setItem('configWeatherProvider','openmeteo');
   if(force || localStorage.getItem('configWeatherLocation') === null) localStorage.setItem('configWeatherLocation',""); // "":by config, city name
-  if(force || localStorage.getItem('configWeatherLocationId') === null) localStorage.setItem('configWeatherLocationId',""); // "":by config, city id
+  if(force || localStorage.getItem('configWeatherLatitude') === null) localStorage.setItem('configWeatherLatitude','');
+  if(force || localStorage.getItem('configWeatherLongitude') === null) localStorage.setItem('configWeatherLongitude','');
   
   if(force || localStorage.getItem('configWeatherLanguage') === null) localStorage.setItem('configWeatherLanguage',""); // "":by config, weather condition language
   if(force || localStorage.getItem('configWeatherMetric') === null) localStorage.setItem('configWeatherMetric',"1"); // 1: metric, 0: imperial
@@ -67,6 +64,7 @@ function initStorage(force){
   if(force || localStorage.getItem('watchinfoPlatform') === null) localStorage.setItem('watchinfoPlatform',"unknown"); 
   if(force || localStorage.getItem('watchinfoModel') === null) localStorage.setItem('watchinfoModel',"unknown"); 
   
+  weather.migrateSettings();
 }
 
 
@@ -230,15 +228,12 @@ Pebble.addEventListener('webviewclosed', function(e) {
     if('configWeatherProvider' in configData) {
       localStorage.setItem('configWeatherProvider',configData.configWeatherProvider);
     }
-    if('configWeatherAPIKey' in configData) {
-      localStorage.setItem('configWeatherAPIKey',configData.configWeatherAPIKey);
-    }
+
     if('configWeatherLocation' in configData) {
       localStorage.setItem('configWeatherLocation',configData.configWeatherLocation);
     }
-    if('configWeatherLocationId' in configData) {
-      localStorage.setItem('configWeatherLocationId',configData.configWeatherLocationId);
-    }
+    if ('configWeatherLatitude' in configData) localStorage.setItem('configWeatherLatitude', configData.configWeatherLatitude === null ? '' : configData.configWeatherLatitude);
+    if ('configWeatherLongitude' in configData) localStorage.setItem('configWeatherLongitude', configData.configWeatherLongitude === null ? '' : configData.configWeatherLongitude);
     if('configWeatherLanguage' in configData) {
       localStorage.setItem('configWeatherLanguage',configData.configWeatherLanguage);
     }
@@ -297,7 +292,6 @@ Pebble.addEventListener('webviewclosed', function(e) {
       if(configData.fetchWeatherNow && configData.fetchWeatherNow > 0){
         type = vars.PKIT_WEATHER;
         localStorage.setItem('weatherLastDownload','0');
-        localStorage.setItem('weatherForecastLastDownload','0');
         localStorage.setItem('locationLastDownload','0');
       }
       if(configData.fetchInfoNow && configData.fetchInfoNow > 0){
@@ -323,4 +317,4 @@ Pebble.addEventListener('webviewclosed', function(e) {
 
   }
 
-});  
+});

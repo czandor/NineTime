@@ -119,123 +119,35 @@ function drawDate() {
     }
 }
 function drawWeather() {
-    obj=document.getElementById('weatherbox');
-    if (weatherEnabled()) {
-        showBox(obj);
-        if (CONFIG_VERSION < 1.60 && settings.weatherProvider > 1) settings.weatherProvider=1;
-        if (gadgetbridge) settings.weatherProvider=1;
-        obj=document.getElementById('weather-pmkey-email-input');
-        if (obj) obj.value=localStorage.getItem('weather-pmkey-email-input'); 
-        obj=document.getElementById('weather-pmkey-pin-input');
-        if (obj) obj.value=localStorage.getItem('weather-pmkey-pin-input'); 
-        
-        obj=document.getElementById('weatherbox-scrollimg');
-        if (obj) {
-            obj.style.opacity='1';
-            obj.style.pointerEvents='';
-        }
-        provider=settings.weatherProvider;
-        obj=document.getElementById('weather-apikey-allsettings');
-        if (provider == 0 || provider == 2 || gadgetbridge) {
-            hideBox(obj);
-        }
-        else showBox(obj);
-        obj=document.getElementById('weather-city-input');
-        obj2=document.getElementById('weather-city-check-0');
-        if(provider == 0){
-            obj.readOnly=true;
-            //obj.value="Your current location will always be used";
-            obj2.style.display="none";
-        }
-        else{
-            obj.readOnly=false;
-            //obj.value="Your current location will always be used";
-            obj2.style.display="";
-        }
-        if (!(provider in settings.weatherSettings)) {
-            settings.weatherSettings[provider]={apiKey:'',
-                                                refreshTime:15,
-                                                cityName:''};
-        }
-        if (!('language' in settings.weatherSettings[provider])) settings.weatherSettings[provider].language=0;
-        if (!('cityId' in settings.weatherSettings[provider])) settings.weatherSettings[provider].cityId='';
-        if(gadgetbridge) {
-            settings.weatherSettings[provider].apiKey="gadgetbridge";
-            settings.weatherSettings[provider].cityId="mimic";
-        }
-        if(provider == 0) {
-            settings.weatherSettings[provider].apiKey="";
-            settings.weatherSettings[provider].cityId="";
-        }
-        obj=document.getElementById('condition-language-0');
-        if(obj) {
-            obj.innerHTML=buildLanguages(0);
-            obj.value=settings.weatherSettings[provider].language;
-        }
-        obj=document.getElementById('condition-language');
-        if (CONFIG_VERSION < 1.60) obj=null;
-        if (weatherConditionTextEnabled()) showBox(obj);
-        else hideBox(obj);
-        removeClassname(document.getElementById('weather-provider-0'),"selected");
-        removeClassname(document.getElementById('weather-provider-1'),"selected");
-        removeClassname(document.getElementById('weather-provider-2'),"selected");
-        addClassname(document.getElementById('weather-provider-'+provider),"selected");
-        text='The developer\'s API key will be used';
-        text2='Please add your weather API key, if you have one.';
-        deleteicon=false;
-        restricted=false;
-        if (settings.weatherSettings[provider].apiKey == '' || settings.weatherSettings[provider].apiKey==weatherApiKeys[provider]){
-            settings.weatherSettings[provider].apiKey=weatherApiKeys[provider];
-            if (provider==0) {
-                text+='*';
-                text2='*Limited use, minimum refresh time: 1 hour, and sometimes download error.<br/><b>Please use your own API key to avoid limitations and errors.</b><br/>';
-                restricted=true;
-                if (settings.weatherSettings[provider].refreshTime<60) settings.weatherSettings[provider].refreshTime=60;
-            }
-        }
-        else{
-            text=settings.weatherSettings[provider].apiKey;
-            text2='Now you are using your private API key 👍';
-            deleteicon=true;
-        }
-        obj=document.getElementById('weather-api-key-saved');
-        if (obj) obj.value=text;
-        obj=document.getElementById('weather-api-key-info');
-        if (obj) obj.innerHTML=text2;
-        obj=document.getElementById('weather-api-key-delete-0');
-        if (obj) obj.style.display=(deleteicon)?"":"none";
-        
-        deleteicon=false;
-        text="Your current location.";
-        text2="If you want to know the weather for a fixed location, find your own city. Otherwise your current position will be used";
-        if (settings.weatherSettings[provider].cityName == ''){
-            //text='Testing to get actual location...';
-            //setTimeout("getLocation()",400);
-        }
-        else{
-            text=settings.weatherSettings[provider].cityName;
-            deleteicon=true;
-        }
-        obj=document.getElementById('weather-city-saved');
-        if (obj) obj.value=text;
-        obj=document.getElementById('weather-city-info');
-        if (obj) obj.innerHTML=text2;
-        obj=document.getElementById('weather-city-delete-0');
-        if (obj) obj.style.display=(deleteicon)?"":"none";
-        
-        obj=document.getElementById('weather-refresh-0');
-        if (obj) obj.value=settings.weatherSettings[provider].refreshTime;
-        obj=document.getElementById('weather-units-0');
-        if (obj) obj.value=settings.weatherMetric;
+    normalizeWeatherSettings();
+    var box = document.getElementById("weatherbox");
+    var enabled = weatherEnabled();
+    if (enabled) showBox(box); else hideBox(box);
+    var shortcut = document.getElementById("weatherbox-scrollimg");
+    if (shortcut) { shortcut.style.opacity = enabled ? "1" : "0.5"; shortcut.style.pointerEvents = enabled ? "" : "none"; }
+    if (!enabled) return;
+    var location = settings.weatherSettings[settings.weatherProvider];
+    for (var i = 0; i < 2; i++) {
+        var button = document.getElementById("weather-provider-" + i);
+        removeClassname(button, "selected");
+        if (i === settings.weatherProvider) addClassname(button, "selected");
     }
-    else {
-        hideBox(obj);
-        obj=document.getElementById('weatherbox-scrollimg');
-        if (obj) {
-            obj.style.opacity='0.5';
-            obj.style.pointerEvents='none';
-        }
+    var language = document.getElementById("condition-language-0");
+    if (language) {
+        language.textContent = "";
+        weatherLanguages.forEach(function (item) { var option = document.createElement("option"); option.value = item[0]; option.textContent = item[1]; language.appendChild(option); });
+        language.value = location.language;
     }
+    var languageRow = document.getElementById("condition-language");
+    if (weatherConditionTextEnabled()) showBox(languageRow); else hideBox(languageRow);
+    var saved = document.getElementById("weather-city-saved");
+    if (saved) saved.value = location.cityName || "Current phone location (GPS)";
+    var gps = document.getElementById("weather-city-delete-0");
+    if (gps) gps.hidden = !location.cityName;
+    var refresh = document.getElementById("weather-refresh-0");
+    if (refresh) refresh.value = location.refreshTime;
+    var units = document.getElementById("weather-units-0");
+    if (units) units.value = settings.weatherMetric;
 }
 function drawCustomText() {
     obj=document.getElementById('customtextbox');

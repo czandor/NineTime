@@ -13,8 +13,8 @@ A környezeti változók felülírják a fájlban lévő értékeket:
 | `NINETIME_PUBLIC_BASE_URL` | Nyilvános alapcím, a `/pebble` résszel, záró `/` nélkül |
 | `NINETIME_DB_HOST`, `NINETIME_DB_PORT` | Adatbázisszerver |
 | `NINETIME_DB_USER`, `NINETIME_DB_PASSWORD`, `NINETIME_DB_NAME` | Adatbázis-hitelesítés |
-| `NINETIME_OWM_KEYS`, `NINETIME_WU_KEYS` | Vesszővel elválasztott szerveroldali kulcsok |
-| `NINETIME_YAHOO_APP_ID`, `NINETIME_YAHOO_CONSUMER_KEY`, `NINETIME_YAHOO_CONSUMER_SECRET` | A megörökölt Yahoo-integráció beállításai |
+| `NINETIME_WEATHER_USER_AGENT` | Az alkalmazás neve/verziója és elérhető kapcsolati URL, a MET Norway előírása szerint |
+| `NINETIME_WEATHER_CACHE_DIR` | Írható időjárás-gyorsítótár a dokumentumgyökéren kívül; alapérték: `web/var/weather/` |
 | `NINETIME_ADMIN_TOKEN` | A külön adminvégpontok hozzáférése; üresen letiltva |
 
 A fontok és a számjegyek az eredeti méreten vannak. A 7 számjegykészlet
@@ -37,11 +37,68 @@ A `smoke-test.cjs` a gép visszacsatolási címén indít ideiglenes PHP-szerver
 tesztkonfigurációval. Nem használja a helyben megőrzött régi kulcsokat,
 és nem küld kérést külső szolgáltatóknak. Ellenőrzi az oldalak betöltését,
 a privát fájlok kizárását a dokumentumgyökérből, a letiltott adminvégpontokat,
-a kliensoldali proxycímeket és a titokellenőrző pozitív kontrollját.
+a régi időjárás-végpontok elérhetőségét, bemenetellenőrzését és a titokellenőrző pozitív kontrollját.
+Futtatja a telefonos kliens, a beállításmigráció, a szolgáltatói adatfeldolgozás,
+a mértékegységek és a gyorsítótár hálózat nélküli regressziós tesztjeit is.
 
 Az ellenőrzések nem helyettesítik a Pebble SDK-val történő C-fordítást,
 az emulátoros/órás próbát vagy az adatbázissal és szolgáltatókkal végzett tesztet.
-A használt régi időjárás-szolgáltatások elérhetőségét ez a rendezés nem igazolja.
+
+## Időjárás — 2.00
+
+Két szolgáltató választható: **Open-Meteo** és **MET Norway**. Egyikhez sem kell
+API-kulcs vagy fiók. Az Open-Meteo ingyenes végpontja személyes, nem üzleti használatra
+szolgál; a feltételek: https://open-meteo.com/en/pricing és
+https://docs.api.met.no/doc/TermsOfService. Az adatok CC BY 4.0 forrásmegjelölése
+a beállítóoldalon és a JSON-válaszban is szerepel.
+
+Az időjárás adatbázis nélkül működik. PHP cURL és írható, privát cache-könyvtár kell.
+A `weather.user_agent` alapértéke a NineTime nyilvános GitHub-projektjére mutat;
+saját telepítésnél adj meg valóban elérhető projekt- vagy kapcsolati címet.
+A szerver csak a két szolgáltató és a városkereső rögzített HTTPS-címeit hívhatja,
+legalább 15 perces gyorsítótárral. A MET `Expires` és `Last-Modified` fejléceit
+figyelembe veszi; a koordinátákat négy tizedesre kerekíti.
+
+A telefon GPS-t használ, vagy a beállítóoldalon kiválasztott város koordinátáit.
+A városkereső Open-Meteo / GeoNames alapú. A jelenlegi adatok és a következő 24 óra
+előrejelzése egy kérésben érkeznek, metrikus vagy angolszász megjelenítéssel.
+Az állapot szövege angol, magyar vagy német lehet. Hálózati hibánál a korábbi adatok
+megmaradnak. A Gadgetbridge a saját időjárás-beállításait használja.
+
+A régi szolgáltatók, a kulcskiosztás, kulcsváltogatás, fejlesztői kulcsot használó
+kerülőút és az időjárás-statisztika kikerült. A 2.00-s telefonos kód a régi beállításokból
+Open-Meteóra és telefonos GPS-re vált; a rögzített várost újra ki kell választani.
+A friss séma már nem hoz létre időjárás-táblákat. Meglévő adatbázis régi tábláit
+ez a forrásmódosítás nem törli automatikusan.
+
+### Régi telepítések kiszolgálása
+
+A `weather_wu.php`, `weather_owm.php`, `weather_yahoo.php`, `weather_czandor.php`
+útvonalak megmaradnak. A `weather.php?url=...` és az általános `xhr.php` régi
+időjárás-API-címeit is az új kompatibilitási réteg kezeli. A régi URL-t nem továbbítja:
+a koordinátát, helynevet, nyelvet és mértékegységet olvassa ki belőle.
+Az eredeti WU/OpenWeather/Yahoo válaszmezőket az új adatokból állítja elő.
+A visszaadott előrejelzés a következő 24 órát összegzi; az OpenWeather listájának
+nyolc eleme ugyanennek az összegzésnek a régi kliens által elvárt csomagolása.
+
+A `weather.legacy_provider` alapértéke `metno`; `openmeteo` is választható.
+A régi beállítóoldalt megnyitó 1.xx kliensnek nem küld ismeretlen szolgáltatónevet:
+megőrzi a telefon korábbi időjárás-beállításait, a szerver adatformátumot alakít.
+A szervercsere az azonos nyilvános URL-en történő telepítés után segít a régi klienseknek.
+A közvetlenül külső szolgáltatót hívó telepítéseket saját szerveroldali átirányítással
+nem lehet elérni; azokhoz kliensfrissítés kell.
+
+A GPS-koordináták és a városnevek működnek. A GeoNames-alapú OpenWeather városazonosítókat
+a kereső feloldja. Más régi azonosítókhoz (WU állomás, Yahoo WOEID) a privát konfiguráció
+`weather.legacy_locations` tömbjében adható meg koordináta és név, például:
+
+~~~php
+'legacy_locations' => array(
+    'wu:pws:STATION' => array('latitude' => 47.4979, 'longitude' => 19.0402, 'name' => 'Budapest')
+)
+~~~
+
+Ezeket az azonosítókat a kód nem értelmezi tévesen egy másik szolgáltató városazonosítójaként.
 
 ## Helyi anyagok
 

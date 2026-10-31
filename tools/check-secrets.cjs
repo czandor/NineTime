@@ -18,6 +18,10 @@ try {
   console.error('Run this check from an initialized Git repository, or pass --file PATH.');
   process.exit(2);
 }
+if (!staged && explicit === -1) {
+  const deleted = new Set(git(['ls-files', '--deleted', '-z']).toString('utf8').split('\0').filter(Boolean));
+  files = files.filter(file => !deleted.has(file));
+}
 const privateInventory = path.join(root, 'local-only/config/known-private-values.json');
 const known = fs.existsSync(privateInventory) ? JSON.parse(fs.readFileSync(privateInventory, 'utf8')) : [];
 const findings = [];
@@ -76,7 +80,6 @@ for (const file of [...new Set(files)]) {
   ];
   for (const [name, regex] of rules) {
     for (const match of src.matchAll(regex)) {
-      if (match[1] && /^(?:NINETIME_SERVER_|REMOVED_LEGACY_)/.test(match[1])) continue;
       report(normalized, src, match.index, name);
     }
   }

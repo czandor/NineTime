@@ -572,3 +572,9 @@ input[type=button]{
     height: auto;
     width:auto !important;
 }
+/* Keyless weather settings */
+.weather-providers{display:flex;gap:10px;padding:12px 0}.weather-provider{flex:1;padding:12px;border:2px solid #d2d2d2;border-radius:6px;background:#fff;color:#222;font:inherit;cursor:pointer}.weather-provider.selected{border-color:#3388cc;background:#eaf4fc}.weather-note{padding:0 12px;font-size:13px;line-height:1.5;color:#555}#weather-city-results{width:100%;max-width:100%}#weather-city-saved{width:70%}#weather-city-status{float:none;width:100%;text-align:left}#weatherbox [hidden]{display:none!important}
+
+.weather-city-search { display: flex; gap: 8px; }
+.weather-city-search #weather-city-input { min-width: 0; width: 100%; flex: 1; }
+.weather-city-search #weather-city-check-0 { width: auto; flex: 0 0 auto; }

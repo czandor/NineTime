@@ -22,9 +22,8 @@ function ninetime_config($name, $fallback = null) {
             'NINETIME_DB_USER' => array('db', 'user'),
             'NINETIME_DB_PASSWORD' => array('db', 'password'),
             'NINETIME_DB_NAME' => array('db', 'database'),
-            'NINETIME_YAHOO_APP_ID' => array('yahoo', 'app_id'),
-            'NINETIME_YAHOO_CONSUMER_KEY' => array('yahoo', 'consumer_key'),
-            'NINETIME_YAHOO_CONSUMER_SECRET' => array('yahoo', 'consumer_secret'),
+            'NINETIME_WEATHER_USER_AGENT' => array('weather', 'user_agent'),
+            'NINETIME_WEATHER_CACHE_DIR' => array('weather', 'cache_dir'),
             'NINETIME_ADMIN_TOKEN' => array('admin_token')
         );
         foreach ($environment as $variable => $keys) {
@@ -32,12 +31,6 @@ function ninetime_config($name, $fallback = null) {
             if ($value === false) continue;
             if (count($keys) === 1) $settings[$keys[0]] = $value;
             else $settings[$keys[0]][$keys[1]] = $value;
-        }
-        foreach (array('wu', 'owm') as $provider) {
-            $value = getenv('NINETIME_' . strtoupper($provider) . '_KEYS');
-            if ($value !== false) {
-                $settings['weather'][$provider]['keys'] = array_values(array_filter(array_map('trim', explode(',', $value))));
-            }
         }
     }
     $value = $settings;

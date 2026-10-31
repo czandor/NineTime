@@ -1,9 +1,9 @@
 # NineTime
 
 A highly customizable digital and analog watchface for Pebble, created by **Andor Czafik**.
-This repository starts from **NineTime 1.92**, the original release for the classic Pebble
-watch family, together with its PHP configurator. **Version 1.92 is the original baseline
-for future development in this repository.**
+**NineTime 2.00** replaces the old weather integrations with two services that need no API key:
+Open-Meteo and MET Norway. The source starts from **1.92, the original baseline** for the
+classic Pebble watch family, together with its PHP configurator.
 
 [Original project page](https://czandor.hu/pebble/ninetime/) · [Rebble Appstore](https://apps.rebble.io/en_US/application/59de171d461a8da6ca0025f9)
 
@@ -15,7 +15,7 @@ for future development in this repository.**
   <img src="docs/images/ninetime-preview-5.gif" height="168" alt="NineTime on Pebble Time Round">
 </p>
 
-## Original supported watches — version 1.92
+## Supported watches — versions 1.92 and 2.00
 
 | SDK platform | Watches |
 | --- | --- |
@@ -24,11 +24,11 @@ for future development in this repository.**
 | `chalk` | Pebble Time Round |
 | `diorite` | Pebble 2, including Pebble 2 SE |
 
-These are the target watches of the original 1.92 project. Health features depend on
+Version 2.00 keeps the target watches and graphics of the original 1.92 project. Health features depend on
 the watch hardware; Pebble 2 SE does not have a heart-rate sensor.
 Platform names follow the [official Pebble hardware reference](https://developer.repebble.com/guides/tools-and-resources/hardware-information/).
 
-Ports to newer watches, including **Pebble Time 2**, are separate work beyond this baseline.
+**Pebble Time 2 support is planned for version 3.xx.**
 
 ## Features
 
@@ -39,8 +39,28 @@ Ports to newer watches, including **Pebble Time 2**, are separate work beyond th
 - A web configurator with previews and saved configurations.
 - Custom information scripts for periodically displaying your own text or data.
 
-These describe the historical watchface. The legacy weather providers and backend services
-need separate validation before a new deployment.
+## Weather in 2.00
+
+- **Open-Meteo**: free for personal, non-commercial use; no account or API key.
+- **MET Norway**: free, with no account or API key.
+- Phone GPS or a city selected through Open-Meteo / GeoNames search.
+- Current temperature, humidity, wind, and the next 24 hours' temperature range and weather icon.
+- Metric or imperial units; condition text in English, Hungarian, or German.
+
+Both services use a shared PHP endpoint and a private cache, with a minimum refresh interval
+of 15 minutes. MET requests identify NineTime through its User-Agent and honor upstream cache expiry.
+The old provider integrations, key distribution, key rotation, developer-key workarounds,
+and weather usage database tables have been removed. **The old weather URLs remain available**:
+compatibility adapters translate the new data into the WU, OpenWeather, and Yahoo response
+formats expected by installed clients. They use MET Norway by default.
+In the 2.00 companion, existing weather settings migrate to
+Open-Meteo with phone GPS; a fixed city can be selected again in the configurator.
+
+Weather data: [Open-Meteo](https://open-meteo.com/) and
+[MET Norway](https://www.met.no/en/free-meteorological-data), under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+See the [Open-Meteo free API terms](https://open-meteo.com/en/pricing) and
+[MET Norway terms](https://docs.api.met.no/doc/TermsOfService).
 
 ## Repository layout
 
@@ -52,6 +72,8 @@ need separate validation before a new deployment.
 | `web/public/` | PHP endpoints, configurator, scripts, and web assets |
 | `web/config/` | Configuration example; private local settings are ignored |
 | `web/bootstrap.php` | Shared configuration and database connection |
+| `web/weather.php` | Keyless weather adapters and private cache |
+| `web/weather-legacy.php` | Old request/response formats backed by the new providers |
 | `database/schema.sql` | Database structure without production data |
 | `tools/` | Configuration, validation, secret detection, and source export |
 | `docs/` | Setup notes and original preview images |
@@ -66,8 +88,8 @@ Copy-Item web/config/config.example.php web/config/config.local.php
 Copy-Item watchface/config.example.json watchface/config.local.json
 ~~~
 
-Set the public server URL in both configuration files. Keep database credentials and shared
-weather API keys only in the private PHP configuration or server environment variables.
+Set the public server URL in both configuration files. Keep database credentials
+only in the private PHP configuration or server environment variables. Weather needs no credentials.
 The watchface configuration contains **only the public URL**.
 
 ~~~powershell
@@ -84,8 +106,10 @@ The watchface still targets the original `aplite`, `basalt`, `chalk`, and `diori
 
 ## Run the web configurator
 
-Import `database/schema.sql` into an empty MySQL/MariaDB database and fill in the private
-server configuration. PHP needs `mysqli` and `curl`; dynamic image rendering also needs `gd`.
+Weather requires PHP `curl` and a writable private `web/var/weather/` cache directory.
+For saved configurations and custom information scripts, import `database/schema.sql` into an
+empty MySQL/MariaDB database and fill in the private server configuration (`mysqli` is required).
+Dynamic image rendering also needs `gd`.
 
 ~~~powershell
 php -S 127.0.0.1:8000 -t web/public
@@ -93,7 +117,8 @@ php -S 127.0.0.1:8000 -t web/public
 
 Open `http://127.0.0.1:8000/pebble/ninetime/`. The document root must be **`web/public`**,
 so the private configuration remains outside the served directory.
-The configurator can render without a database; saving/loading and the backend services require one.
+The configurator preview and weather work without a database; saved configurations and
+custom information requests require one.
 
 ## Secrets and source preservation
 

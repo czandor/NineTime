@@ -23,57 +23,23 @@ async function freePort() {
   await new Promise(resolve => socket.close(resolve));
   return port;
 }
-function request(port, pathname) {
+function request(port, pathname, method = 'GET') {
   return new Promise((resolve, reject) => {
-    const req = http.get({ hostname: '127.0.0.1', port, path: pathname }, response => {
+    const req = http.request({ hostname: '127.0.0.1', port, path: pathname, method }, response => {
       const parts = [];
       response.on('data', part => parts.push(part));
       response.on('end', () => resolve({ status: response.statusCode, body: Buffer.concat(parts).toString('utf8') }));
     });
     req.setTimeout(3000, () => req.destroy(new Error('Local PHP request timed out.')));
     req.on('error', reject);
+    req.end();
   });
 }
 async function main() {
-  const publicBase = 'https://ninetime.example.invalid/pebble';
-  const browser = {
-    settings: { weatherProvider: 1 },
-    NINETIME_BASE_URL: publicBase,
-    encodeURIComponent
-  };
-  vm.createContext(browser);
-  vm.runInContext(read('web/public/pebble/ninetime/js/weather.js'), browser);
-  let target = new URL(browser.getWeatherURL('NINETIME_SERVER_OWM', 'Budapest'));
-  check(target.origin === new URL(publicBase).origin, 'Browser shared-key request must use our server.');
-  check(target.pathname === '/pebble/weather_owm.php', 'Browser OWM proxy path.');
-  check(new URL(target.searchParams.get('url')).searchParams.get('appid') === 'NINETIME_SERVER_OWM', 'Browser sends a marker, not a server secret.');
-  browser.settings.weatherProvider = 0;
-  target = new URL(browser.getWeatherURL('NINETIME_SERVER_WU', 'Budapest'));
-  check(target.pathname === '/pebble/weather_wu.php', 'Browser WU proxy path.');
-
-  const storage = {
-    configWeatherProvider: 'owm',
-    configWeatherAPIKey: 'NINETIME_SERVER_OWM',
-    configWeatherLocation: 'Budapest',
-    configWeatherLocationId: '',
-    configWeatherMetric: '1',
-    configWeatherLanguage: 'en'
-  };
-  const phone = {
-    require: name => name === './vars' ? { BASE_SITE_URL: publicBase } : {},
-    localStorage: { getItem: name => storage[name] || '' },
-    module: { exports: {} },
-    encodeURIComponent
-  };
-  vm.createContext(phone);
-  vm.runInContext(read('watchface/src/pkjs/weather.js'), phone);
-  check(new URL(phone.getWeatherURL()).pathname === '/pebble/weather_owm.php', 'Phone OWM current-weather proxy.');
-  check(new URL(phone.getForecastURL()).pathname === '/pebble/weather_owm.php', 'Phone OWM forecast proxy.');
-  storage.configWeatherProvider = 'wu';
-  storage.configWeatherAPIKey = 'NINETIME_SERVER_WU';
-  check(new URL(phone.getWeatherURL()).pathname === '/pebble/weather_wu.php', 'Phone WU current-weather proxy.');
-  check(new URL(phone.getForecastURL()).pathname === '/pebble/weather_wu.php', 'Phone WU forecast proxy.');
-
+  for (const command of [[process.execPath, ['tools/weather-test.cjs']], [process.env.PHP_BINARY || 'php', ['tools/weather-test.php']]]) {
+    const result = cp.spawnSync(command[0], command[1], { cwd: root, encoding: 'utf8', windowsHide: true });
+    check(result.status === 0, 'Weather regression suite: ' + (result.stderr || result.stdout));
+  }
   const fixture = 'tools/.secret-check-fixture.json';
   try {
     const fake = 'a1b2c3d4'.repeat(4);
@@ -102,8 +68,6 @@ async function main() {
       NINETIME_DB_USER: 'ninetime_test',
       NINETIME_DB_PASSWORD: '',
       NINETIME_DB_NAME: 'ninetime_test',
-      NINETIME_OWM_KEYS: '',
-      NINETIME_WU_KEYS: '',
       NINETIME_ADMIN_TOKEN: ''
     }
   });
@@ -122,14 +86,28 @@ async function main() {
     check(ready, 'Local PHP connection failed: ' + lastConnectionError + '\n' + serverDiagnostics);
     const home = await request(port, '/pebble/ninetime/index.php');
     check(home.status === 200 && /NineTime|NINETIME/.test(home.body), 'NineTime home page loads.');
-    const preview = await request(port, '/pebble/ninetime/configpage.php?token=local-preview&platform=basalt&model=pebble_time&CONFIG_VERSION=1.92&h24=1&batt=75');
+    const preview = await request(port, '/pebble/ninetime/configpage.php?token=local-preview&platform=basalt&model=pebble_time&CONFIG_VERSION=2.00&h24=1&batt=75');
     check(preview.status === 200 && preview.body.includes('WatchFace style') && preview.body.includes('NINETIME_BASE_URL'), 'Configurator renders without a live database.');
     for (const file of ['/config/config.local.php', '/config/config.example.php', '/bootstrap.php', '/local-only/config/original-server-config.json']) {
       check((await request(port, file)).status === 404, 'Private file is outside the document root: ' + file);
     }
-    check((await request(port, '/pebble/weather-chart.php')).status === 403, 'Weather statistics require admin authentication.');
+    check((await request(port, '/pebble/weather-chart.php')).status === 404, 'Weather statistics endpoint removed.');
     check((await request(port, '/pebble/colormatch.php')).status === 403, 'Color matching requires admin authentication.');
-    check((await request(port, '/pebble/getapikey_owm.php')).status === 410, 'Legacy key distribution is disabled.');
+    check((await request(port, '/pebble/getapikey_owm.php')).status === 410, 'Legacy key discovery remains disabled.');
+    for (const endpoint of ['weather_owm.php', 'weather_wu.php', 'weather_yahoo.php', 'weather_czandor.php']) {
+      check((await request(port, '/pebble/' + endpoint)).status === 400, 'Legacy weather URL exists and validates input: ' + endpoint);
+    }
+    for (const query of ['provider=invalid', 'latitude=91&longitude=0', 'url=http%3A%2F%2F127.0.0.1', 'action=geocode&q=a']) {
+      check((await request(port, '/pebble/weather.php?' + query)).status === 400, 'Weather input validation: ' + query);
+    }
+    check((await request(port, '/pebble/weather.php', 'POST')).status === 405, 'Weather endpoint accepts GET only.');
+    check(preview.body.includes('Open-Meteo') && preview.body.includes('MET Norway') && !preview.body.includes('id="weather-api-key-input"'), 'Exactly the new weather choices, without key entry.');
+    const refreshOptions = preview.body.match(/<select id="weather-refresh-0"[^>]*>([\s\S]*?)<\/select>/)[1];
+    check(!/<option value="(?:5|10)"/.test(refreshOptions), 'Weather refresh choices respect the 15-minute minimum.');
+    for (const script of preview.body.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
+      if (script[1].trim()) new vm.Script(script[1]);
+    }
+    check(preview.body.includes('var actualVersion="2.00"'), 'Version 2.00 renders as valid JavaScript.');
     console.log('Smoke tests passed: ' + assertions + ' assertions. No external service was contacted.');
   } finally {
     php.kill();

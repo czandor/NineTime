@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../../../bootstrap.php';
 
-$actualVersion=file_get_contents("version.txt");
+$actualVersion=trim(file_get_contents(__DIR__ . '/version.txt'));
 $fonttypes=array("","9","o","r","a");
 if($CONFIG_VERSION >= 1.80) $fonttypes=array("","9","o","r","a","l","b");
 $analogtypes=array("analog-num-config","analog-partline-config","analog-fulline-config");

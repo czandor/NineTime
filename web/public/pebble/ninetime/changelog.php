@@ -72,6 +72,13 @@
     </h2>
 
     <div class="app-changelog ng-scope">
+      <h2>Version 2.00 <span class="changelog-date">Oct 31, 2026</span></h2>
+      <pre>- Replaced legacy weather providers with Open-Meteo and MET Norway. No account or API key required.
+- Current weather and the next 24 hours' forecast share one cached request.
+- Phone GPS or city search, metric/imperial units, and English/Hungarian/German condition text.
+- Removed old key distribution, developer-key workarounds, and weather statistics.
+- Kept legacy weather URLs and response formats, now backed by new keyless weather data.
+- Original 1.92 graphics and watch platforms retained. Pebble Time 2 support is planned for 3.xx.</pre>
   <!-- ngRepeat: item in ::changelog --><!-- ngIf: ::changelog --><div ng-repeat="item in ::changelog" ng-if="::changelog" class="ng-scope">
     <h2 class="ng-binding">
       Version 1.92

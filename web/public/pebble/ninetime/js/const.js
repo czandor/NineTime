@@ -33,8 +33,7 @@ var STATUS_H_WEATHER_COND =11 ;
 var STATUS_H_HOLIDAYS_CHR =12 ;
 var STATUS_H_TIME_SEC     =13 ;
 
-var weatherProviders=['wu','owm','yahoo'];
-var weatherApiKeys=['NINETIME_SERVER_WU','NINETIME_SERVER_OWM',''];
+var weatherProviders=['openmeteo','metno'];
 
 var fontNames=['C64','9GAG','Ubuntu','Mr. Robot','Atari'];
 if (CONFIG_VERSION >= 1.80) fontNames=['C64','9GAG','Ubuntu','Mr. Robot','Atari','LECO','BosaNova'];
@@ -333,14 +332,11 @@ var settings={
     quietCharge:1,
     quietTime:[0,23,0,6,0],
     customText:'PEBBLE',
-    weatherProvider: 1,
+    weatherSchemaVersion: 2,
+    weatherProvider: 0,
     weatherMetric:1,
-    weatherSettings:[{apiKey:'',
-                      refreshTime:60,
-                      cityName:''},
-                     {apiKey:'',
-                      refreshTime:15,
-                      cityName:''}],
+    weatherSettings:[{refreshTime:30, cityName:'', latitude:null, longitude:null, language:'en'},
+                     {refreshTime:30, cityName:'', latitude:null, longitude:null, language:'en'}],
     dayNames:[dayNames[0][0],dayNames[0][1],dayNames[0][2],dayNames[0][3],dayNames[0][4],dayNames[0][5],dayNames[0][6]],
     monthNames:[monthNames[0][0],monthNames[0][1],monthNames[0][2],monthNames[0][3],monthNames[0][4],monthNames[0][5],
                 monthNames[0][6],monthNames[0][7],monthNames[0][8],monthNames[0][9],monthNames[0][10],monthNames[0][11]],
@@ -362,71 +358,7 @@ var settings={
 };
 var defaultSettings=JSON.stringify(settings);
 
-/*var settings = {
-  value_appConfigInt: new Array( 0,0,0,0,0,0,0,0,0,0,
-    2, //value_infoDownloadFreq //0: disable, 5: 5min, 15: 15min, 30: 30min, 60: 1hour, 61: morning and night, 62: morning
-    2, //value_weatherDownloadFreq //0: disable, 5: 5min, 15: 15min, 30: 30min, 60: 1hour, 61: morning and night, 62: morning
-    1, //value_statusPosition //nobt, silent icon position - 1: up, 2: down
-    1, //value_vertPos //Vertical info position - 1: left, 2: right
-    2, //value_horPos //Horizontal info position - 1: top, 2: bottom
-    (PBL_HEALTH)?STATUS_V_BATT:STATUS_V_BATT, //value_positionsV // Vertical icons - top
-    (PBL_HEALTH)?STATUS_V_NONE:STATUS_V_NONE, //value_positionsV // Vertical icons - middle
-    (PBL_HEALTH)?STATUS_V_DATE:STATUS_V_DATE, //value_positionsV // Vertical icons - bottom
-  
-    (PBL_HEALTH)?STATUS_H_HEALTH:STATUS_H_DATE, //value_positionsH // // Horizontal icons - default show
-    (PBL_HEALTH)?STATUS_H_NONE:STATUS_H_NONE, //value_positionsH // Horizontal icons - show on tap/shake
-    7, //value_positionsH // Horizontal icons - seconds/10 delay to show on tap/shake
-    7, //value_positionsH // Horizontal icons - seconds delay to back to default
-    1, //value_positionsH // Double tap
-    // font type for every number and digit- 0: square, 1: 9gag, 2: round
-    DFT,DFT,DFT, // value_fontType digit 0
-    DFT,DFT,DFT,DFT,DFT,DFT,DFT,DFT,DFT,DFT, // value_fontType digit 1
-    DFT,DFT,DFT,DFT,DFT,DFT, // value_fontType digit 2
-    DFT,DFT,DFT,DFT,DFT,DFT,DFT,DFT,DFT,DFT, // value_fontType digit 3
-    // digits background color - 0-63
-    DFB,DFB,DFB,DFB, // value_bgDigit digit 0
-    DFB,DFB,DFB,DFB,DFB,DFB,DFB,DFB,DFB,DFB, // value_bgDigit digit 1
-    DFB,DFB,DFB,DFB,DFB,DFB, // value_bgDigit digit 2
-    DFB,DFB,DFB,DFB,DFB,DFB,DFB,DFB,DFB,DFB, // value_bgDigit digit 3
-    //digits color - 0-63
-    DFC,DFC,DFC, //value_colorDigit digit 0
-    DFC,DFC,DFC,DFC,DFC,DFC,DFC,DFC,DFC,DFC, //value_colorDigit digit 1
-    DFC,DFC,DFC,DFC,DFC,DFC, //value_colorDigit digit 2
-    DFC,DFC,DFC,DFC,DFC,DFC,DFC,DFC,DFC,DFC, //value_colorDigit digit 3
-    
-    DBB[0], //value_bgVert // Vertical info background color - 0-63
-    DBL[0], //value_lineVert // Vertical info line color - 0-63
-    DBC[0], //value_colorVert // Vertical info text color - 0-63
-    DBC[0], //value_iconVert // Vertical icon color - 0-63
-    DBI[0], //value_iconbgVert // Vertical icon background color - 0-63
-    DBB[1], //value_bgHor1 // Horizontal1 info background color - 0-63
-    DBB[2], //value_bgHor2 // Horizontal2 info background color - 0-63
-    DBL[1], //value_lineHor1 // Horizontal1 info line color - 0-63
-    DBL[2], //value_lineHor2 // Horizontal2 info line color - 0-63
-    DBC[1], //value_colorHor1 // Horizontal1 info text color - 0-63
-    DBC[2], //value_colorHor2 // Horizontal2 info text color - 0-63
-    DBC[1], //value_iconHor1 // Horizontal icon color - 0-63
-    DBC[2], //value_iconHor2 // Horizontal icon color - 0-63
-    DBI[1], //value_iconbgHor1 // Horizontal icon background color - 0-63
-    DBI[2], //value_iconbgHor2 // Horizontal icon background color - 0-63
 
-    1, //value_leadingZero // hour leading zero
-    0, //value_tempMetric
-    1, //value_vibrateDisconnect
-    0, //value_vibratePeriod
-    0 //value_faceType //0: normal, color/digit/number; 1: color/all_digit/hour; 2: analog with square sans font color/hour; 3:  analog with 9gag font color/hour
-    ),
-  value_daynames:dayNames[0].join(),
-  value_monthnames:monthNames[0].join(),
-  value_textString:"PEBBLE",
-  
-  configWeatherProvider:"owm",
-  configWeatherAPIKey:"NINETIME_SERVER_OWM",
-  configWeatherLocation:"",
-  configInfoURL:NINETIME_BASE_URL + '/words.php',
-  configInfoUsePos:0,
-  configLanguage:languages[0][0]
-};*/
 
 
 function pebblecolor(name,rgb,rgbsun) {

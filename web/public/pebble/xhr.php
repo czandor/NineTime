@@ -1,5 +1,13 @@
 <?php
 require_once __DIR__ . '/../../bootstrap.php';
+// Legacy weather URLs are parsed locally and translated; they are never forwarded.
+if (isset($_GET['url']) && is_string($_GET['url']) &&
+    in_array(strtolower((string) parse_url($_GET['url'], PHP_URL_HOST)),
+        array('api.openweathermap.org', 'api.wunderground.com', 'query.yahooapis.com'), true)) {
+    require_once __DIR__ . '/../../weather-legacy.php';
+    ninetime_weather_legacy_serve(null);
+    exit;
+}
 
 $url=$_GET['url'];
 $postdata=file_get_contents('php://input');

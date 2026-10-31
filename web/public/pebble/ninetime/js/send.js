@@ -3,6 +3,7 @@ function cancelClose() {
     document.location = return_to;
 }
 function sendData() {
+    normalizeWeatherSettings();
     //onScroll();
     if (settings.info[settings.infoType].urlOK == '') settings.infoType=1;
     saveData();
@@ -12,10 +13,10 @@ function sendData() {
       configMonthnames:(dateNameEnabled()?settings.monthNames.join(','):""),
       configDaynames:(dateNameEnabled()?settings.dayNames.join(','):""),
       configWeatherProvider:weatherProviders[settings.weatherProvider],
-      configWeatherAPIKey:settings.weatherSettings[settings.weatherProvider].apiKey,
       configWeatherLocation:settings.weatherSettings[settings.weatherProvider].cityName,
-      configWeatherLocationId:settings.weatherSettings[settings.weatherProvider].cityId,
-      configWeatherLanguage:(weatherConditionTextEnabled())?languages[settings.weatherSettings[settings.weatherProvider].language][0]:'',
+      configWeatherLatitude:settings.weatherSettings[settings.weatherProvider].latitude,
+      configWeatherLongitude:settings.weatherSettings[settings.weatherProvider].longitude,
+      configWeatherLanguage:(weatherConditionTextEnabled())?settings.weatherSettings[settings.weatherProvider].language:'',
       configWeatherMetric:settings.weatherMetric,
       configInfoURL:settings.info[settings.infoType].urlOK,
       configInfoUsePos:settings.info[settings.infoType].usePos,
@@ -27,6 +28,12 @@ function sendData() {
       configTextStringEnabled:customTextEnabled()*1,
       configWeatherLocationEnabled:weatherLocationEnabled()*1
     };
+    if (Number(CONFIG_VERSION) < 2) {
+      // An installed 1.xx companion cannot understand the new provider identifiers.
+      // Keep its existing routing/key/location preferences; server adapters supply new data.
+      ['configWeatherProvider', 'configWeatherLocation', 'configWeatherLatitude', 'configWeatherLongitude',
+       'configWeatherLanguage', 'configWeatherMetric'].forEach(function (key) { delete options[key]; });
+    }
     //void 0;
     if(1 || model != 'qemu_platform_basalt') document.location = return_to + encodeURIComponent(JSON.stringify(options));
 }

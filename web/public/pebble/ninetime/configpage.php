@@ -62,7 +62,7 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
             var batt='<?=$batt?>';
             var h24=<?=$h24?>;
             var CONFIG_VERSION='<?=$CONFIG_VERSION?>';
-            var actualVersion='<?=$actualVersion?>';
+            var actualVersion=<?=json_encode(trim(file_get_contents(__DIR__ . '/version.txt')))?>;
             var PBL_HEALTH=<?=$PBL_HEALTH?>;
             var PBL_COLOR=<?=$PBL_COLOR?>;
             var PBL_HR=<?=$PBL_HR?>;
@@ -73,7 +73,6 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
             var imageurl='images.php?<?=filemtime("images.php")?>';
             if (paypal == 'success') localStorage.setItem('paypalsuccess','1');
         </script>
-        <script src="js/pmkey.js?<?=filemtime("js/pmkey.js")?>"></script>
         <script src="js/loadsave.js?<?=filemtime("js/loadsave.js")?>"></script>
         <script src="js/send.js?<?=filemtime("js/send.js")?>"></script>
         <script src="js/info.js?<?=filemtime("js/info.js")?>"></script>
@@ -540,154 +539,77 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
         
     </div>
 
-    <div class="settingsbox hidden-box" id="weatherbox" style="">
+    <div class="settingsbox hidden-box" id="weatherbox">
         <div class="head"><img src="images/config-icon-weather.png" />Weather settings</div>
-        <br/>
-        <div class="inputrow">
-            <?php if($gadgetbridge) { ?>
-                <div class="left clickable" style="width:100%; text-align: center;" id="weather-provider-1" onclick="change(this)">
-                    Gadgetbridge is using the &apos;Weather notification&apos; program to get weather. You can install it from here:<br/>
-                    <a href="https://f-droid.org/packages/ru.gelin.android.weather.notification/" target="_parent">F-Droid: Weather notification</a><br/>
-                    After the installation, please enable Gadgetbridge skin in weather app.
-                </div>
-            <?php } else { ?>
-                <div class="left" style="<?=(false && $CONFIG_VERSION >= 1.60)?"width:33%;":""?>text-align: center;"><img class="clickable" id="weather-provider-0" onclick="change(this)" src="images/yahoo-logo.png" style="width: 100%;" /></div>
-                <div class="left" style="<?=(false && $CONFIG_VERSION >= 1.60)?"width:33%;":""?>text-align: center;"><img class="clickable" id="weather-provider-1" onclick="change(this)" src="images/owm-logo.png" style="width: 100%;" /></div>
-                <?php if(false && $CONFIG_VERSION >= 1.60) {?><div class="left" style="width: 33%;text-align: center;"><img class="clickable" id="weather-provider-2" onclick="change(this)" src="images/yahoo-logo.png" style="width: 100%;" /></div><?php } ?>
-            <?php } ?>
-            <div class="clear"></div>
+        <?php if($CONFIG_VERSION < 2) { ?>
+        <p class="weather-note">Weather requests reaching this server use new weather data in the original response format. Your phone's existing weather preferences are preserved. Upgrade to 2.00 to choose the new providers and fixed locations.</p>
+        <?php } ?>
+        <div <?=($CONFIG_VERSION < 2)?'style="display:none"':''?>>
+        <div class="inputrow weather-providers">
+            <button type="button" class="weather-provider" id="weather-provider-0" onclick="change(this)">Open-Meteo</button>
+            <button type="button" class="weather-provider" id="weather-provider-1" onclick="change(this)">MET Norway</button>
+        </div>
+        <p class="weather-note">Free weather without registration or an API key. Open-Meteo is free for personal, non-commercial use.</p>
+        <?php if($gadgetbridge) { ?>
+        <p class="weather-note">Gadgetbridge supplies weather through its own integration. These settings apply to the Pebble mobile companion.</p>
+        <?php } ?>
         </div>
         <div class="inputrow">
-            <div class="left" style="width: auto;">
-                Refresh time
-            </div>
+            <div class="left">Refresh time</div>
             <div class="right">
                 <select id="weather-refresh-0" onchange="change(this)">
-                    <?php
-                    foreach($refreshtimes as $key=>$value){
-                        ?>
-                        <option value="<?=$key?>"><?=$value?></option>
-                        <?php
-                    }
-                    ?>
-                </select>
-            </div>
-        </div>
-        <div class="hidden-box" id="weather-apikey-allsettings">
-            <div class="inputrow hidden-box" id="condition-language">
-                <div class="left" style="width: auto;">Condition Language</div>
-                <div class="right">
-                    <select id="condition-language-0" onchange="change(this)"></select> 
-                </div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow">
-                <div class="left" style="text-align: left;">
-                    Provider API key
-                </div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow">
-                <div class="right" style="padding-left:0;">
-                    <input placeholder='Your API key' id="weather-api-key-input" type="text" style="width:100%;" />
-                </div>
-                <div class="right">
-                    <input id="weather-api-key-check-0" onclick="change(this)" type="button" style="width:60%;" value="Check &amp; Save" />
-                    <div class="status" style="width: 40%; float: right;" id="weather-api-status"></div>
-                </div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow">
-                <div class="right" style="width: 90%; padding-left:0;">
-                    <input id="weather-api-key-saved" type="text" style="width:100%; background-color: #EEEEEE;" readonly=readonly />
-                </div>
-                <div class="right" style="width:5%;">
-                    <input id="weather-api-key-delete-0" onclick="change(this)" type="button" style="display: none;" value="X" />
-                </div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow">
-                <div class="left" style="width: 100%; text-align: left;">
-                    <span id='weather-api-key-info'></span>
-                </div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow">
-                <div class="left" style="width: 100%; text-align: left;padding-top:0; font-weight: normal;min-height:0;">
-                    Load API key from Master Key ( pmkey.xyz )
-                </div>
-                <div class="clear"></div>
-                <div class="right" style="padding-left:0; width: 25%;padding-top:0;">
-                    <input placeholder='Your email' id="weather-pmkey-email-input" type="email" style="width:100%;" />
-                </div>
-                <div class="right" style="width: 25%;padding-top:0;">
-                    <input placeholder='5-digit PIN' id="weather-pmkey-pin-input" type="number" style="width:100%;" />
-                </div>
-                <div class="right" style="padding-top:0;">
-                    <input id="weather-pmkey-check-0" onclick="change(this)" type="button" style="width:30%;" value="Load" />
-                    <div class="status" style="width: 70%; float: right;" id="weather-pmkey-status"></div>
-                </div>
-                <div class="clear"></div>
-            </div>
-        </div>
-        <div class="inputrow">
-            <div class="left" style="text-align: left;">
-                Weather location
-            </div>
-            <div class="clear"></div>
-        </div>
-        <?php if($gadgetbridge) { ?>
-            <div class="left" style="text-align: left; width: 100%;">
-                Please set up the location in the weather app: &apos;Weather notification&apos; 
-            </div>
-            <div class="clear"></div>
-        <?php } else { ?>
-        <div class="inputrow">
-            <div class="right" style="padding-left:0;">
-                <input placeholder='City name' id="weather-city-input" type="text" style="width:100%;" />
-            </div>
-            <div class="right">
-                <input id="weather-city-check-0" onclick="change(this)" type="button" style="width:60%;" value="Check &amp; Save" />
-                <div class="status" style="width: 40%; float: right;" id="weather-city-status"></div>
-            </div>
-            <div class="clear"></div>
-        </div>
-        <div class="inputrow">
-            <div class="right" style="width: 90%; padding-left:0;">
-                <input id="weather-city-saved" type="text" style="width:100%; background-color: #EEEEEE;" readonly=readonly />
-            </div>
-            <div class="right" style="width:5%;">
-                <input id="weather-city-delete-0" onclick="change(this)" type="button" style="display: none;" value="X" />
-            </div>
-            <div class="clear"></div>
-        </div>
-        <div class="inputrow">
-            <div class="left" style="width: 100%; text-align: left;">
-                <span id='weather-city-info'></span>
-            </div>
-            <div class="clear"></div>
-        </div>
-        <?php } ?>
-        <div class="inputrow">
-            <div class="left" style="width: auto;">
-                Units
-            </div>
-            <div class="right" style="">
-                <select id="weather-units-0" onchange="change(this);">
-                    <option value='0'>Imperial (F°, mph)</option>
-                    <option value='1'>Metric (C°, kmh)</option>
+                    <?php foreach($refreshtimes as $key=>$value) { if($key < 15) continue; ?>
+                    <option value="<?=$key?>"><?=$value?></option>
+                    <?php } ?>
                 </select>
             </div>
             <div class="clear"></div>
         </div>
-        <div class="inputrow" style="">
-            <div class="left" style=""><span>Force download to watch</span></div>
-            <div class="right">
-                <input type="checkbox" id="weather-config-fetchnow" /><label for="weather-config-fetchnow">Fetch now</label>
+        <div <?=($CONFIG_VERSION < 2)?'style="display:none"':''?>>
+        <div class="inputrow hidden-box" id="condition-language">
+            <div class="left">Condition language</div>
+            <div class="right"><select id="condition-language-0" onchange="change(this)"></select></div>
+            <div class="clear"></div>
+        </div>
+        <div class="inputrow">
+            <div class="left">Fixed location</div>
+            <div class="right weather-city-search">
+                <input placeholder="City name" id="weather-city-input" type="text" maxlength="80" />
+                <input id="weather-city-check-0" onclick="change(this)" type="button" value="Find city" />
             </div>
             <div class="clear"></div>
         </div>
+        <div class="inputrow">
+            <div class="status" id="weather-city-status" role="status" aria-live="polite"></div>
+            <select id="weather-city-results" aria-label="Matching cities" hidden onchange="weatherCitySelect(this.value)"></select>
+        </div>
+        <div class="inputrow">
+            <input id="weather-city-saved" type="text" readonly aria-label="Selected weather location" />
+            <button type="button" id="weather-city-delete-0" onclick="change(this)">Use phone GPS</button>
+        </div>
+        <p class="weather-note" id="weather-city-info">Leave the fixed location empty to follow your phone's location.</p>
+        <div class="inputrow">
+            <div class="left">Units</div>
+            <div class="right">
+                <select id="weather-units-0" onchange="change(this)">
+                    <option value="0">Imperial (°F, mph)</option>
+                    <option value="1">Metric (°C, km/h)</option>
+                </select>
+            </div>
+            <div class="clear"></div>
+        </div>
+        </div>
+        <div class="inputrow">
+            <label for="weather-config-fetchnow">Fetch weather after saving</label>
+            <input type="checkbox" id="weather-config-fetchnow" />
+        </div>
+        <p class="weather-note">Forecast: next 24 hours. Data from
+            <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> or
+            <a href="https://www.met.no/" target="_blank" rel="noopener">MET Norway</a>
+            under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.
+            Location search: Open-Meteo / GeoNames.</p>
     </div>
+
     <div class="settingsbox hidden-box" id="datebox" style="">
         <div class="head"><img src="images/config-icon-date.png" />Date and Time settings</div>
         <div class="hidden-box" id="date-config-date">

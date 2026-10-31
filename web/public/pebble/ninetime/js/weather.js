@@ -1,221 +1,130 @@
+var weatherLanguages = [['en', 'English'], ['hu', 'Magyar'], ['de', 'Deutsch']];
+var weatherSearchResults = [];
+var weatherSearchRequest = 0;
 
-function getWeatherURL(apikey,city){
-  var url="";
-  var units="imperial";
-  if(settings.weatherProvider == 0) {
-      url = 'http://api.wunderground.com/api/' + apikey +
-            '/conditions/q/' + encodeURIComponent(city) + '.json';
-      url=NINETIME_BASE_URL + '/weather_wu.php?url='+encodeURIComponent(url);
-  }
-  if(settings.weatherProvider == 1) {
-      url = 'http://api.openweathermap.org/data/2.5/weather?q=' +
-        encodeURIComponent(city) + '&units='+units+'&appid=' + apikey;
-      //url=NINETIME_BASE_URL + '/weather_owm.php?url='+encodeURIComponent(url);
-  }
-  if(settings.weatherProvider == 2) {
-      /*url = 'https://query.yahooapis.com/v1/public/yql?q=' +
-        encodeURIComponent('select * from weather.forecast where woeid in (select woeid from geo.places(1) where text="'+city+'")') +
-        '&format=json';*/
-      url = 'https://query.yahooapis.com/v1/public/yql?q=' +
-        encodeURIComponent('select * from geo.places(1) where text="'+city+'"') +
-        '&format=json';
-  }
-  if (apikey == 'NINETIME_SERVER_OWM') {
-    url = NINETIME_BASE_URL + '/weather_owm.php?url=' + encodeURIComponent(url);
-  }
-  return url;
+function weatherCoordinatesValid(latitude, longitude) {
+    return latitude !== null && longitude !== null && latitude !== '' && longitude !== '' &&
+        isFinite(Number(latitude)) && isFinite(Number(longitude)) &&
+        Math.abs(Number(latitude)) <= 90 && Math.abs(Number(longitude)) <= 180;
 }
 
-
-/// WU ////////////////////////
-
-function getCurrentWeatherWU(apikey,city,saveto) {
-    var url=getWeatherURL(apikey,city);
-
-    xhrRequest(url, 'GET',
-      function(responseText) {
-        // responseText contains a JSON object with weather info
-        var json;
-        try {
-          json = JSON.parse(responseText);
-        }catch(e) {
-
-          weatherError(apikey,city,saveto,'Response exception');
-          return;
-        }
-        if(json.response.features && json.response.features.conditions == 1) {
-
-            if (json.response.results) {
-                //weatherSuccess(apikey,json.response.results[0].country+'/'+json.response.results[0].state+'/'+json.response.results[0].city,saveto);
-                weatherSuccess(apikey,
-                                 'zmw:'+json.response.results[0].zmw
-                                 +'.'+json.response.results[0].city
-                                 +','+json.response.results[0].state
-                                 +','+json.response.results[0].country_name
-                                 ,saveto,'zmw:'+json.response.results[0].zmw);
-                
-            }
-            else if (json.current_observation && json.current_observation.display_location) {
-                //weatherSuccess(apikey,json.current_observation.display_location.city+','+json.current_observation.display_location.state+','+json.current_observation.display_location.state_name,saveto);
-                //weatherSuccess(apikey,json.current_observation.display_location.full,saveto);
-                zmw='zmw:'+json.current_observation.display_location.zip
-                      +'.'+json.current_observation.display_location.magic
-                      +'.'+json.current_observation.display_location.wmo;
-                weatherSuccess(apikey,zmw
-                                 +'.'+json.current_observation.display_location.city
-                                 +','+json.current_observation.display_location.state
-                                 +','+json.current_observation.display_location.state_name
-                                 ,saveto,zmw);
-            }
-            else{
-                weatherError(apikey,city,saveto,(json.response.error)?json.response.error.description:"ERROR");
-            }
-        }
-        else{
-
-          weatherError(apikey,city,saveto,json.response.error.description);
-        }
+function normalizeWeatherSettings() {
+    var old = settings.weatherSettings || [];
+    var selected = old[settings.weatherProvider] || {};
+    var legacy = settings.weatherSchemaVersion !== 2;
+    var provider = !legacy && (settings.weatherProvider === 0 || settings.weatherProvider === 1) ? settings.weatherProvider : 0;
+    settings.weatherSettings = [0, 1].map(function (index) {
+        var source = legacy ? selected : (old[index] || {});
+        var refresh = Number(source.refreshTime);
+        if ([0, 15, 30, 60, 61, 62].indexOf(refresh) < 0) refresh = 30;
+        var language = source.language;
+        if (typeof language === 'number' && typeof languages !== 'undefined' && languages[language]) language = languages[language][0];
+        if (['en', 'hu', 'de'].indexOf(language) < 0) language = 'en';
+        var fixed = weatherCoordinatesValid(source.latitude, source.longitude);
+        return {
+            refreshTime: refresh, language: language,
+            cityName: fixed && typeof source.cityName === 'string' ? source.cityName.slice(0, 160) : '',
+            latitude: fixed ? Number(source.latitude) : null,
+            longitude: fixed ? Number(source.longitude) : null
+        };
+    });
+    settings.weatherProvider = provider;
+    settings.weatherSchemaVersion = 2;
+    ['weather-pmkey-email-input', 'weather-pmkey-pin-input', 'configWeatherAPIKey', 'configWeatherLocationId'].forEach(function (key) {
+        localStorage.removeItem(key);
     });
 }
 
+function weatherJsonRequest(parameters, callback) {
+    var xhr = new XMLHttpRequest();
+    var finished = false;
+    function complete(data, error) {
+        if (finished) return;
+        finished = true;
+        callback(data, error);
+    }
+    var query = Object.keys(parameters).map(function (key) {
+        return encodeURIComponent(key) + '=' + encodeURIComponent(parameters[key]);
+    }).join('&');
+    xhr.open('GET', NINETIME_BASE_URL + '/weather.php?' + query);
+    xhr.timeout = 25000;
+    xhr.onload = function () {
+        var data;
+        try { data = JSON.parse(xhr.responseText); } catch (error) { return complete(null, 'Weather service returned an invalid response.'); }
+        if (xhr.status < 200 || xhr.status >= 300 || data.error) return complete(null, data.error || 'Weather service unavailable.');
+        complete(data, '');
+    };
+    xhr.onerror = xhr.ontimeout = function () { complete(null, 'Unable to contact the weather service. Please try again.'); };
+    xhr.send();
+}
 
+function weatherCityStatus(message, error) {
+    var status = document.getElementById('weather-city-status');
+    if (status) {
+        status.textContent = message;
+        removeClassname(status, 'status-ok');
+        removeClassname(status, 'status-error');
+        if (message) addClassname(status, error ? 'status-error' : 'status-ok');
+    }
+}
 
-/// OWM //////////////////////
-function getCurrentWeatherOWM(apikey,city,saveto) {
-    var url=getWeatherURL(apikey,city);
-
-    xhrRequest(url, 'GET',
-      function(responseText) {
-        // responseText contains a JSON object with weather info
-        var json;
-        try {
-          json = JSON.parse(responseText);
-        }catch(e) {
-
-          weatherError(apikey,city,saveto,'Response exception');
-        }
-        if(json.cod == "200") {
-
-          weatherSuccess(apikey,json.name+','+json.sys.country,saveto,''+json.id+'');
-        }
-        else{
-
-          weatherError(apikey,city,saveto,json.message);
-        }
+function weatherCityCheck() {
+    var input = document.getElementById('weather-city-input');
+    var name = input ? input.value.trim() : '';
+    if (name.length < 2 || name.length > 80) return weatherCityStatus('Enter a city name (2–80 characters).', true);
+    var request = ++weatherSearchRequest;
+    weatherCityStatus('Searching…', false);
+    weatherJsonRequest({ action: 'geocode', q: name, language: settings.weatherSettings[settings.weatherProvider].language }, function (data, error) {
+        if (request !== weatherSearchRequest) return;
+        if (error) return weatherCityStatus(error, true);
+        weatherSearchResults = (data.locations || []).filter(function (place) {
+            return place && typeof place.name === 'string' && weatherCoordinatesValid(place.latitude, place.longitude);
+        });
+        var select = document.getElementById('weather-city-results');
+        select.textContent = '';
+        select.hidden = true;
+        if (!weatherSearchResults.length) return weatherCityStatus('No matching city found.', true);
+        if (weatherSearchResults.length === 1) return weatherCitySelect(0);
+        var placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Choose a location…';
+        select.appendChild(placeholder);
+        weatherSearchResults.forEach(function (place, index) {
+            var option = document.createElement('option');
+            option.value = String(index);
+            option.textContent = place.name;
+            select.appendChild(option);
+        });
+        select.hidden = false;
+        weatherCityStatus('Choose the matching location below.', false);
     });
 }
 
-/// Yahoo //////////////////////
-function getCurrentWeatherYahoo(apikey,city,saveto) {
-    var url=getWeatherURL(apikey,city);
-
-    xhrRequest(url, 'GET',
-      function(responseText) {
-        // responseText contains a JSON object with weather info
-        var json;
-        try {
-          json = JSON.parse(responseText);
-        }catch(e) {
-
-          weatherError(apikey,city,saveto,'Response exception');
-        }
-        if(json.query && json.query.count==1 && json.query.results && json.query.results.place && json.query.results.place.woeid) {
-
-          weatherSuccess(apikey,json.query.results.place.name
-                                +','+json.query.results.place.admin1.content
-                                +','+json.query.results.place.country.code
-                                ,saveto,json.query.results.place.woeid);
-        }
-        else{
-
-          weatherError(apikey,city,saveto,(json.error)?json.error.description:'city not found');
-        }
-    });
-}
-
-function testWeather(apikey,city,saveto){
-    if(settings.weatherProvider == 0) getCurrentWeatherWU(apikey,city,saveto);
-    if(settings.weatherProvider == 1) getCurrentWeatherOWM(apikey,city,saveto);
-    if(settings.weatherProvider == 2) getCurrentWeatherYahoo(apikey,city,saveto);
-}
-function weatherSuccess(apikey,city,saveto,cityId) {
-
+function weatherCitySelect(index) {
+    if (index === '') return;
+    var place = weatherSearchResults[Number(index)];
+    if (!place) return;
+    var location = settings.weatherSettings[settings.weatherProvider];
+    location.cityName = place.name.slice(0, 160);
+    location.latitude = Number(place.latitude);
+    location.longitude = Number(place.longitude);
+    document.getElementById('weather-city-results').hidden = true;
+    weatherCityStatus('Location saved.', false);
     weatherChanged();
-    if (saveto == 'api') {
-        objstatus=document.getElementById('weather-api-status');
-        document.getElementById('weather-api-key-input').value='';
-        settings.weatherSettings[settings.weatherProvider].apiKey=apikey;
-    }
-    else{
-        objstatus=document.getElementById('weather-city-status');
-        document.getElementById('weather-city-input').value='';
-        settings.weatherSettings[settings.weatherProvider].cityName=city;
-        if (cityId) settings.weatherSettings[settings.weatherProvider].cityId=cityId;
-    }
-    if (objstatus) objstatus.innerHTML='OK';
-    addClassname(objstatus,"status-ok");
+    saveData();
     drawWeather();
 }
-function weatherError(apikey,city,saveto,error) {
 
-    if (saveto == 'api') {
-        objstatus=document.getElementById('weather-api-status');
-    }
-    else{
-        objstatus=document.getElementById('weather-city-status');
-    }
-    if (objstatus) objstatus.innerHTML=error.substring(0,30);
-    addClassname(objstatus,"status-error");
-}
-
-function weatherApiKeyCheck(check){
-    if (!check) {
-        obj=document.getElementById('weather-api-status');
-        if (obj) obj.innerHTML='Checking...';
-        removeClassname(obj,"status-ok");
-        removeClassname(obj,"status-error");
-        setTimeout(function(){weatherApiKeyCheck(1);},1000);
-    }
-    else{
-        apikey=document.getElementById('weather-api-key-input').value.replace(/[^\w]/gi, '');
-        saveto='api';
-        city='London';
-        if (apikey.length < 3) weatherError(apikey,city,saveto,'key too short');
-        else testWeather(apikey,city,saveto);
-    }
-}
-function weatherCityCheck(check){
-    if (!check) {
-        obj=document.getElementById('weather-city-status');
-        if (obj) obj.innerHTML='Checking...';
-        removeClassname(obj,"status-ok");
-        removeClassname(obj,"status-error");
-        setTimeout(function(){weatherCityCheck(1);},1000);
-    }
-    else{
-        apikey=settings.weatherSettings[settings.weatherProvider].apiKey;
-
-
-        saveto='city';
-        city=document.getElementById('weather-city-input').value;
-        if (city.length < 3) weatherError(apikey,city,saveto,'city too short');
-        else testWeather(apikey,city,saveto);
-    }
-}
-function weatherApiKeyDelete() {
-    settings.weatherSettings[settings.weatherProvider].apiKey='';
-    obj=document.getElementById('weather-api-status');
-    if (obj) obj.innerHTML='';
-    removeClassname(obj,"status-ok");
-    removeClassname(obj,"status-error");
-    drawWeather();
-}
 function weatherCityDelete() {
-    settings.weatherSettings[settings.weatherProvider].cityName='';
-    obj=document.getElementById('weather-city-status');
-    if (obj) obj.innerHTML='';
-    removeClassname(obj,"status-ok");
-    removeClassname(obj,"status-error");
+    weatherSearchRequest++;
+    var location = settings.weatherSettings[settings.weatherProvider];
+    location.cityName = '';
+    location.latitude = null;
+    location.longitude = null;
+    var results = document.getElementById('weather-city-results');
+    if (results) results.hidden = true;
+    weatherCityStatus('', false);
+    weatherChanged();
     drawWeather();
 }
 
@@ -244,7 +153,6 @@ function weatherForecastEnabled() {
     return false;
 }
 function weatherConditionTextEnabled() {
-    //if (settings.weatherProvider == 2) return false;
     for (a=0 ; a<3 ; a++) {
       if (('weathercondition' in getHorizontalObject(settings.horizontalPositions[a])) && getHorizontalObject(settings.horizontalPositions[a]).weathercondition) return true;
     }

@@ -75,9 +75,8 @@
 - 6 font types for digital, and 3 analog face types.<br/>
 - Colorize everything (each digits, each hours, each numbers)<br/>
 - Font type based on digit, number, hour<br/>
-- Weather from OpenWeatherMap, WeatherUnderground or Yahoo! Weather<br/>
+- Free, keyless weather from Open-Meteo or MET Norway<br/>
 - Show weather city and/or condition text in your language<br/>
-- Supports Master Key ( pmkey.xyz ) for Weather API key<br/>
 - Positive words from external server<br/>
 - Create your own script to display word or sentence on watch periodically<br/>
 - Health data steps and heart rate on supported watches<br/>
@@ -90,7 +89,7 @@ This WatchFace is completely free.<br/>
 If you like my work, please donate me by paypal.<br/>
 <a href="http://czandor.hu/pebble/info-help.php">Help for Info Script</a><br/>
 <br/>
-<pre>Keywords: analog, digital, customizable, big, bigfont, 9gag, health, heartrate, steps, pebble2, hr, weather, forecast, pmkey.xyz, script, php, vibrate, color, holidays, seconds</pre>
+<pre>Keywords: analog, digital, customizable, big, bigfont, 9gag, health, heartrate, steps, pebble2, hr, weather, forecast, script, php, vibrate, color, holidays, seconds</pre>
 <br/>
 PBW file download Link:<br/>
 <a href="http://czandor.hu/pebble/NineTime.pbw">http://czandor.hu/pebble/NineTime.pbw</a><br/>

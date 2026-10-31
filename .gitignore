@@ -12,6 +12,7 @@
 
 # Local backups, original downloads, credentials and generated artifacts.
 /local-only/
+/web/var/
 **/.env
 **/.env.*
 !**/.env.example

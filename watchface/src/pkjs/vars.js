@@ -1,7 +1,7 @@
 var site = require('./site-config.json');
 var BASE_SITE_URL = site.baseUrl.replace(/\/+$/, '');
 var BASE_CONFIG_URL = BASE_SITE_URL + '/ninetime/configpage.php';
-var CONFIG_VERSION = 1.92; // Keep in sync with const.h and the configurator.
+var CONFIG_VERSION = 2.00; // Keep in sync with const.h and the configurator.
 
 var PKIT_CONFIG=           1;
 var PKIT_WEATHER=          2;
@@ -9,8 +9,7 @@ var PKIT_INFO=             3;
 var PKIT_WEATHER_INFO=     4;
 var PKIT_INIT=             5;
 
-var WEATHER_FORECAST_MIN_FREQ=3*60*60; //seconds
-var WEATHER_MIN_FREQ=3*60; //seconds
+var WEATHER_MIN_FREQ=15*60; // Current conditions and forecast use one cached response.
 var LOCATION_MIN_FREQ=8*60; //seconds
 
 var xhrRequest = function (url, type, callback,postdata) {
@@ -74,7 +73,6 @@ module.exports.PKIT_WEATHER = PKIT_WEATHER;
 module.exports.PKIT_INFO = PKIT_INFO;
 module.exports.PKIT_WEATHER_INFO = PKIT_WEATHER_INFO;
 module.exports.PKIT_INIT = PKIT_INIT;
-module.exports.WEATHER_FORECAST_MIN_FREQ = WEATHER_FORECAST_MIN_FREQ;
 module.exports.WEATHER_MIN_FREQ = WEATHER_MIN_FREQ;
 module.exports.LOCATION_MIN_FREQ = LOCATION_MIN_FREQ;
 module.exports.xhrRequest = xhrRequest;
