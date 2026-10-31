@@ -19,6 +19,7 @@
 **/config.local.php
 **/config.local.json
 /watchface/src/pkjs/site-config.json
+/watchface/.lock-waf*
 **/secrets*.json
 **/client_secret*.json
 **/*.pem

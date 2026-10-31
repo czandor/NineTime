@@ -40,7 +40,7 @@ void draw_rect(GContext *ctx,GColor fillcolor,GColor borderColor, uint8_t border
   graphics_fill_rect(ctx, bound2,0, GCornerNone);
 }
 
-uint8_t write_text2(GContext * ctx, char text[100], uint8_t small, char text2[10], uint8_t small2,GSize padding,GRect bound,GTextAlignment alignment,uint8_t color){
+uint8_t write_text2(GContext * ctx, const char *text, uint8_t small, const char *text2, uint8_t small2,GSize padding,GRect bound,GTextAlignment alignment,uint8_t color){
   #ifdef SHOW_APP_LOGS
 	  APP_LOG(APP_LOG_LEVEL_DEBUG, "write_text2:%s, x:%d, y:%d",text,x,y);
 	#endif 
@@ -92,7 +92,7 @@ uint8_t write_text2(GContext * ctx, char text[100], uint8_t small, char text2[10
   } 
   return height;
 }
-GSize get_text_size(char szoveg[100],uint8_t small,uint16_t width){
+GSize get_text_size(const char *szoveg,uint8_t small,uint16_t width){
   //GFont font=fonts_get_system_font((small)?((small==1)?TEXTFONTSMALL:TEXTFONTTINY):TEXTFONT);
   return graphics_text_layout_get_content_size(szoveg, fonts_get_system_font((small)?((small==1)?TEXTFONTSMALL:TEXTFONTTINY):TEXTFONT), GRect(0,0,(width == 0)?2000:width,100), GTextOverflowModeWordWrap, GTextAlignmentCenter);
 }

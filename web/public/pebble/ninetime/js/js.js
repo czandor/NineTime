@@ -328,6 +328,9 @@ function change(obj) {
         case 'weather-provider':
             if (partnum != settings.weatherProvider) {
                 settings.weatherProvider=partnum;
+                weatherSearchRequest++;
+                weatherSearchResults=[];
+                document.getElementById('weather-city-results').hidden=true;
                 obj=document.getElementById('weather-city-status');
                 if (obj) obj.innerHTML='';
                 removeClassname(obj,"status-ok");

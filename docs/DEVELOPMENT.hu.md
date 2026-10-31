@@ -76,6 +76,27 @@ pebble build
 A célplatformok jelenleg az eredeti `aplite`, `basalt`, `chalk`, `diorite` platformok.
 A PBT2/Emery elrendezése a 3.xx verzió külön következő feladata.
 
+## Helyi emulátor Windows alatt
+
+Ezen a gépen a külön `NineTimeSDK` WSL2-környezetben van az Ubuntu 24.04 és a
+Pebble SDK. A korábbi Debian környezetet nem használja. A Linux fájlrendszere és a
+letöltések az ignorált `local-only/emulator/` mappában vannak.
+
+Indítás a projekt gyökeréből (fordítással együtt):
+
+~~~powershell
+pwsh -File tools/start-emulator.ps1 -Platform basalt
+~~~
+
+A `basalt` a Pebble Time; `aplite`, `chalk` és `diorite` is választható.
+WSLg mellett az emulátor saját ablakban jelenik meg. Grafikus munkamenet nélküli
+Linuxon a segéd Xvfb-t, x11vnc-t és noVNC-t használ, kizárólag a helyi gépen;
+ilyenkor kiírja a megnyitható helyi címet. A parancs maga nem nyit böngészőt.
+
+Új gépen előbb a [hivatalos SDK-útmutató](https://developer.repebble.com/sdk/)
+szerint kell telepíteni a WSL2/Ubuntu környezetet és a Pebble SDK-t.
+A `-Distro` paraméterrel más WSL-disztribúció is megadható.
+
 ## GitHubra szánt fájlok ellenőrzése
 
 ~~~powershell
