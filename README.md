@@ -1,4 +1,4 @@
-T# NineTime
+# NineTime
 
 A highly customizable digital and analog watchface for Pebble, created by **Andor Czafik**.
 This repository starts from **NineTime 1.92**, the original release for the classic Pebble
