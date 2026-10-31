@@ -1,7 +1,9 @@
-# NineTime
+T# NineTime
 
 A highly customizable digital and analog watchface for Pebble, created by **Andor Czafik**.
-This repository preserves version **1.92** of the watchface together with its PHP configurator.
+This repository starts from **NineTime 1.92**, the original release for the classic Pebble
+watch family, together with its PHP configurator. **Version 1.92 is the original baseline
+for future development in this repository.**
 
 [Original project page](https://czandor.hu/pebble/ninetime/) · [Rebble Appstore](https://apps.rebble.io/en_US/application/59de171d461a8da6ca0025f9)
 
@@ -12,6 +14,21 @@ This repository preserves version **1.92** of the watchface together with its PH
   &nbsp;
   <img src="docs/images/ninetime-preview-5.gif" height="168" alt="NineTime on Pebble Time Round">
 </p>
+
+## Original supported watches — version 1.92
+
+| SDK platform | Watches |
+| --- | --- |
+| `aplite` | Pebble (original / Classic), Pebble Steel |
+| `basalt` | Pebble Time, Pebble Time Steel |
+| `chalk` | Pebble Time Round |
+| `diorite` | Pebble 2, including Pebble 2 SE |
+
+These are the target watches of the original 1.92 project. Health features depend on
+the watch hardware; Pebble 2 SE does not have a heart-rate sensor.
+Platform names follow the [official Pebble hardware reference](https://developer.repebble.com/guides/tools-and-resources/hardware-information/).
+
+Ports to newer watches, including **Pebble Time 2**, are separate work beyond this baseline.
 
 ## Features
 
