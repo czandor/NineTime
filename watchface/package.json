@@ -1,0 +1,645 @@
+{
+    "author": "andor@czafik.hu",
+    "dependencies": {},
+    "keywords": [],
+    "name": "ninetime",
+    "pebble": {
+        "capabilities": [
+            "location",
+            "configurable",
+            "health"
+        ],
+        "displayName": "NineTime",
+        "enableMultiJS": true,
+        "messageKeys": [
+            "TYPE",
+            "BATTERY",
+            "STEPS",
+            "HRBPM",
+            "HRBPM_MIN",
+            "HRBPM_MAX",
+            "HEALTH_LASTDATA",
+            "H24",
+            "CONFIG_VERSION_MAJOR",
+            "CONFIG_VERSION_MINOR"
+        ],
+        "projectType": "native",
+        "resources": {
+            "media": [
+                {
+                    "file": "images/week.png",
+                    "name": "IMAGE_WEEK",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/analog-fulline.png",
+                    "name": "IMAGE_ANALOG_FULLLINE",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/analog-partline.png",
+                    "name": "IMAGE_ANALOG_PARTLINE",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/analog-num.png",
+                    "name": "IMAGE_ANALOG_NUMBER",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_FOG.png",
+                    "name": "ICON_FOG",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_THUNDERSTORM.png",
+                    "name": "ICON_THUNDERSTORM",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_SUNNY_DAY.png",
+                    "name": "ICON_SUNNY_DAY",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_RAINING_AND_SNOWING.png",
+                    "name": "ICON_RAINING_AND_SNOWING",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_PARTLY_CLOUDY.png",
+                    "name": "ICON_PARTLY_CLOUDY",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_PARTLY_CLOUDY_NIGHT.png",
+                    "name": "ICON_PARTLY_CLOUDY_NIGHT",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_LIGHT_SNOW.png",
+                    "name": "ICON_LIGHT_SNOW",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_LIGHT_RAIN.png",
+                    "name": "ICON_LIGHT_RAIN",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_HEAVY_SNOW.png",
+                    "name": "ICON_HEAVY_SNOW",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_HEAVY_RAIN.png",
+                    "name": "ICON_HEAVY_RAIN",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_CLOUDY_DAY.png",
+                    "name": "ICON_CLOUDY_DAY",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/W_CLEAR_NIGHT.png",
+                    "name": "ICON_CLEAR_NIGHT",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/date.png",
+                    "name": "IMAGE_DATE",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/nosilent.png",
+                    "name": "IMAGE_NOSILENT",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/silent.png",
+                    "name": "IMAGE_SILENT",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/disconnected.png",
+                    "name": "IMAGE_DISCONNECTED",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/9o.png",
+                    "name": "IMAGE_NUMO_9",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/8o.png",
+                    "name": "IMAGE_NUMO_8",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/7o.png",
+                    "name": "IMAGE_NUMO_7",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/6o.png",
+                    "name": "IMAGE_NUMO_6",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/5o.png",
+                    "name": "IMAGE_NUMO_5",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/4o.png",
+                    "name": "IMAGE_NUMO_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/3o.png",
+                    "name": "IMAGE_NUMO_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/2o.png",
+                    "name": "IMAGE_NUMO_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/1o.png",
+                    "name": "IMAGE_NUMO_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/0o.png",
+                    "name": "IMAGE_NUMO_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/99.png",
+                    "name": "IMAGE_NUM9_9",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/89.png",
+                    "name": "IMAGE_NUM9_8",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/79.png",
+                    "name": "IMAGE_NUM9_7",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/69.png",
+                    "name": "IMAGE_NUM9_6",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/59.png",
+                    "name": "IMAGE_NUM9_5",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/49.png",
+                    "name": "IMAGE_NUM9_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/39.png",
+                    "name": "IMAGE_NUM9_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/29.png",
+                    "name": "IMAGE_NUM9_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/19.png",
+                    "name": "IMAGE_NUM9_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/09.png",
+                    "name": "IMAGE_NUM9_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/steps.png",
+                    "name": "IMAGE_STEPS",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/hr.png",
+                    "name": "IMAGE_HR",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/battc.png",
+                    "name": "IMAGE_BATT_C",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/batt0.png",
+                    "name": "IMAGE_BATT_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/9.png",
+                    "name": "IMAGE_NUM_9",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/8.png",
+                    "name": "IMAGE_NUM_8",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/7.png",
+                    "name": "IMAGE_NUM_7",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/6.png",
+                    "name": "IMAGE_NUM_6",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/5.png",
+                    "name": "IMAGE_NUM_5",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/4.png",
+                    "name": "IMAGE_NUM_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/3.png",
+                    "name": "IMAGE_NUM_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/2.png",
+                    "name": "IMAGE_NUM_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/0.png",
+                    "name": "IMAGE_NUM_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/1.png",
+                    "name": "IMAGE_NUM_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/appicon.png",
+                    "menuIcon": true,
+                    "name": "IMAGE_APP_ICON",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/0r.png",
+                    "name": "IMAGE_NUMR_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/1r.png",
+                    "name": "IMAGE_NUMR_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/2r.png",
+                    "name": "IMAGE_NUMR_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/3r.png",
+                    "name": "IMAGE_NUMR_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/4r.png",
+                    "name": "IMAGE_NUMR_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/5r.png",
+                    "name": "IMAGE_NUMR_5",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/6r.png",
+                    "name": "IMAGE_NUMR_6",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/7r.png",
+                    "name": "IMAGE_NUMR_7",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/8r.png",
+                    "name": "IMAGE_NUMR_8",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/9r.png",
+                    "name": "IMAGE_NUMR_9",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/0a.png",
+                    "name": "IMAGE_NUMA_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/1a.png",
+                    "name": "IMAGE_NUMA_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/2a.png",
+                    "name": "IMAGE_NUMA_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/3a.png",
+                    "name": "IMAGE_NUMA_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/4a.png",
+                    "name": "IMAGE_NUMA_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/5a.png",
+                    "name": "IMAGE_NUMA_5",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/6a.png",
+                    "name": "IMAGE_NUMA_6",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/7a.png",
+                    "name": "IMAGE_NUMA_7",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/8a.png",
+                    "name": "IMAGE_NUMA_8",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/9a.png",
+                    "name": "IMAGE_NUMA_9",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/hrh.png",
+                    "name": "IMAGE_HRH",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/stepsh.png",
+                    "name": "IMAGE_STEPSH",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/derror.png",
+                    "name": "IMAGE_DERROR",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/derror_silent.png",
+                    "name": "IMAGE_DERROR_SILENT",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/percentsmall.png",
+                    "name": "IMAGE_PERCENTSMALL",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/0l.png",
+                    "name": "IMAGE_NUML_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/1l.png",
+                    "name": "IMAGE_NUML_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/2l.png",
+                    "name": "IMAGE_NUML_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/3l.png",
+                    "name": "IMAGE_NUML_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/4l.png",
+                    "name": "IMAGE_NUML_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/5l.png",
+                    "name": "IMAGE_NUML_5",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/6l.png",
+                    "name": "IMAGE_NUML_6",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/7l.png",
+                    "name": "IMAGE_NUML_7",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/8l.png",
+                    "name": "IMAGE_NUML_8",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/9l.png",
+                    "name": "IMAGE_NUML_9",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/0b.png",
+                    "name": "IMAGE_NUMB_0",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/1b.png",
+                    "name": "IMAGE_NUMB_1",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/2b.png",
+                    "name": "IMAGE_NUMB_2",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/3b.png",
+                    "name": "IMAGE_NUMB_3",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/4b.png",
+                    "name": "IMAGE_NUMB_4",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/5b.png",
+                    "name": "IMAGE_NUMB_5",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/6b.png",
+                    "name": "IMAGE_NUMB_6",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/7b.png",
+                    "name": "IMAGE_NUMB_7",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/8b.png",
+                    "name": "IMAGE_NUMB_8",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                },
+                {
+                    "file": "images/9b.png",
+                    "name": "IMAGE_NUMB_9",
+                    "targetPlatforms": null,
+                    "type": "bitmap"
+                }
+            ]
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "chalk",
+            "diorite"
+        ],
+        "uuid": "724f7efb-c100-4d5c-b38c-5ad98e7e440e",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "1.92.0"
+}

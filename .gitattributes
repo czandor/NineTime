@@ -1,0 +1,15 @@
+* text=auto
+*.php text eol=lf
+*.js text eol=lf
+*.cjs text eol=lf
+*.ps1 text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.c text eol=lf
+*.h text eol=lf
+*.py text eol=lf
+*.sql text eol=lf
+tools/git-hooks/* text eol=lf
+*.png binary
+*.jpg binary
+*.gif binary
