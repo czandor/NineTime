@@ -46,6 +46,27 @@ az emulátoros/órás próbát vagy az adatbázissal és szolgáltatókkal végz
 
 ## Időjárás — 2.00
 
+A 2.02-es GPS-városnevekhez egyszer építsd fel a privát GeoNames-adatállományt:
+
+~~~sh
+python tools/update-locations.py
+~~~
+
+Az alapértelmezett cél a `web/var/locations/`, a dokumentumgyökéren kívül, Gitből kizárva.
+A PHP-folyamatnak olvasási jog kell hozzá. Más helyhez a `weather.location_dir` vagy
+`NINETIME_LOCATION_DIR` adható meg. A forrás a GeoNames `cities500.zip`, CC BY 4.0;
+a letöltési cím, időpont és forrásellenőrző összeg a `metadata.json` fájlban szerepel.
+Frissítéshez új könyvtárba építs (`--destination`), majd váltsd át a konfigurációt.
+A feloldás a legközelebbi lakott települést keresi; nem időjárás-állomást választ,
+az előrejelzés továbbra is a GPS-koordinátára készül. A GPS-pozíciót ehhez külön
+geokódoló szolgáltatásnak nem küldjük el. Hiányzó névadatbázis esetén az időjárás működik tovább.
+
+A beállítások mentése minden alkalommal frissíti az időjárást és a kiválasztott info scriptet.
+Az 1.92-es info-beállításokat a beállítóoldal nem cseréli le: az URL, az adatok, a nyelv,
+a GPS-választás, az időzítés és a régi Positive words végpont is megmarad.
+Új profilhoz az `info-example.php` ISO-hetet és éves napsorszámot mutat;
+a meglévő profilok csak a „Restore example” gombbal váltanak erre.
+
 Két szolgáltató választható: **Open-Meteo** és **MET Norway**. Egyikhez sem kell
 API-kulcs vagy fiók. Az Open-Meteo ingyenes végpontja személyes, nem üzleti használatra
 szolgál; a feltételek: https://open-meteo.com/en/pricing és

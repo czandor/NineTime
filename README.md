@@ -1,7 +1,8 @@
 # NineTime
 
 A highly customizable digital and analog watchface for Pebble, created by **Andor Czafik**.
-**NineTime 2.00** replaces the old weather integrations with two services that need no API key:
+**NineTime 2.02** includes a redesigned configurator, GPS city names and automatic weather/info refresh on save.
+Version 2.00 replaced the old weather integrations with two services that need no API key:
 Open-Meteo and MET Norway. The source starts from **1.92, the original baseline** for the
 classic Pebble watch family, together with its PHP configurator.
 
@@ -15,7 +16,7 @@ classic Pebble watch family, together with its PHP configurator.
   <img src="docs/images/ninetime-preview-5.gif" height="168" alt="NineTime on Pebble Time Round">
 </p>
 
-## Supported watches — versions 1.92 and 2.00
+## Supported watches — versions 1.92 and 2.xx
 
 | SDK platform | Watches |
 | --- | --- |
@@ -24,7 +25,7 @@ classic Pebble watch family, together with its PHP configurator.
 | `chalk` | Pebble Time Round |
 | `diorite` | Pebble 2, including Pebble 2 SE |
 
-Version 2.00 keeps the target watches and graphics of the original 1.92 project. Health features depend on
+Version 2.xx keeps the target watches and graphics of the original 1.92 project. Health features depend on
 the watch hardware; Pebble 2 SE does not have a heart-rate sensor.
 Platform names follow the [official Pebble hardware reference](https://developer.repebble.com/guides/tools-and-resources/hardware-information/).
 
@@ -39,11 +40,19 @@ Platform names follow the [official Pebble hardware reference](https://developer
 - A web configurator with previews and saved configurations.
 - Custom information scripts for periodically displaying your own text or data.
 
+The 2.02 settings page keeps existing 1.92 info scripts, including the selected script, confirmed URL,
+custom data, language, GPS permission and refresh interval. The new week/day-of-year example is used
+only for new profiles or when **Restore example** is selected. The original `words.php` endpoint remains available.
+
+Sidebar/row placement, content and colour palettes are separate groups. Colour previews are neutral
+samples. Saving settings refreshes weather and any active info script automatically.
+
 ## Weather in 2.00
 
 - **Open-Meteo**: free for personal, non-commercial use; no account or API key.
 - **MET Norway**: free, with no account or API key.
 - Phone GPS or a city selected through Open-Meteo / GeoNames search.
+- GPS city labels use the nearest populated place from a private GeoNames dataset; forecasts still use the actual coordinates.
 - Current temperature, humidity, wind, and the next 24 hours' temperature range and weather icon.
 - Metric or imperial units; condition text in English, Hungarian, or German.
 
@@ -107,6 +116,8 @@ The watchface still targets the original `aplite`, `basalt`, `chalk`, and `diori
 ## Run the web configurator
 
 Weather requires PHP `curl` and a writable private `web/var/weather/` cache directory.
+GPS city names also require the private gazetteer: run `python tools/update-locations.py` once.
+Set `weather.location_dir` (or `NINETIME_LOCATION_DIR`) if it is stored elsewhere. See [setup](docs/SETUP.md).
 For saved configurations and custom information scripts, import `database/schema.sql` into an
 empty MySQL/MariaDB database and fill in the private server configuration (`mysqli` is required).
 Dynamic image rendering also needs `gd`.

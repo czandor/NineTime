@@ -1,5 +1,6 @@
 function init() {
     loadData();
+    if(typeof initSettingsUI === 'function') initSettingsUI();
     reDraw();
     //window.onscroll = onScroll;
     setTimeout('initScroll()',500);
@@ -324,7 +325,6 @@ function change(obj) {
             break;
         
         // weather
-        //var weatherChanged=false;
         case 'weather-provider':
             if (partnum != settings.weatherProvider) {
                 settings.weatherProvider=partnum;
@@ -336,7 +336,6 @@ function change(obj) {
                 removeClassname(obj,"status-ok");
                 removeClassname(obj,"status-error");
                 needRedraw=true;
-                weatherChanged();
             }
             foundFaceType=true;
             break;
@@ -345,7 +344,6 @@ function change(obj) {
             if (value != settings.weatherSettings[settings.weatherProvider].refreshTime) {
                 settings.weatherSettings[settings.weatherProvider].refreshTime=value;
                 needRedraw=true;
-                weatherChanged();
             }
             foundFaceType=true;
             break;
@@ -354,7 +352,6 @@ function change(obj) {
             if (value != settings.weatherMetric) {
                 settings.weatherMetric=value;
                 needRedraw=true;
-                weatherChanged();
             }
             foundFaceType=true;
             break;
@@ -363,7 +360,6 @@ function change(obj) {
             if (value != settings.weatherSettings[settings.weatherProvider].language) {
                 settings.weatherSettings[settings.weatherProvider].language=value;
                 needRedraw=true;
-                weatherChanged();
             }
             foundFaceType=true;
             break;
@@ -373,7 +369,6 @@ function change(obj) {
             break;
         case 'weather-city-delete':
             weatherCityDelete();
-            weatherChanged();
             foundFaceType=true;
             break;
         
@@ -415,20 +410,13 @@ function change(obj) {
             break;
         
         // info script
-        case 'info-type':
-            if (settings.infoType!=partnum) {
-                removeClassname(document.getElementById('info-type-'+settings.infoType),'selected');
-                hideBox(document.getElementById('info-config-'+settings.infoType));
-                settings.infoType=partnum;
-                needRedraw=true;
-                infoChanged();
-            }
-            foundFaceType=true;
-            break;
         case 'info-config-url':
             value=obj.value;
-            if (settings.info[settings.infoType].url!=value) {
+            if (settings.info[settings.infoType].url!=value || settings.info[settings.infoType].urlOK!=value) {
                 settings.info[settings.infoType].url=value;
+                settings.info[settings.infoType].urlOK=value;
+                infoChanged();
+                needRedraw=true;
                 //needRedraw=true;
             }
             foundFaceType=true;
@@ -443,8 +431,7 @@ function change(obj) {
             foundFaceType=true;
             break;
         case 'info-config-data':
-            if(settings.infoType == 1) value=''+obj.checked*1;
-            else value=obj.value;
+            value=obj.value;
             if (settings.info[settings.infoType].data!=value) {
                 settings.info[settings.infoType].data=value;
                 needRedraw=true;
@@ -834,24 +821,13 @@ function customTextEnabled() {
 }
 function showBox(obj,show) {
     if (!obj) return;
-    if (show) {
-        //obj.style.margin='';
-        //obj.style.padding='';
-        obj.style.height=obj.scrollHeight+'px';
-        setTimeout(function(){obj.style.height='auto'},400);
-    }
-    else if(obj.style.height!='auto'){
-        obj.style.display='block';
-        setTimeout(function(){showBox(obj,1)},10);
-    }
+    obj.style.display='block';
+    obj.style.height='auto';
 }
 function hideBox(obj) {
     if (!obj) return;
-    setTimeout(function(){obj.style.display='none';},400);
-    obj.style.height=obj.scrollHeight+'px';
-    setTimeout(function(){obj.style.height='0px';},10);
-    //obj.style.margin='0';
-    //obj.style.padding='0';
+    obj.style.display='none';
+    obj.style.height='auto';
 }
 var xhrRequest = function (url, type, callback,postdata) {
   var xhr = new XMLHttpRequest();

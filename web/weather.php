@@ -1,6 +1,7 @@
 <?php
 // Keyless weather adapters. Callers cannot choose an upstream URL or host.
 require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/locations.php';
 
 function ninetime_weather_coordinate($value, $limit) {
     if (!is_scalar($value) || !is_numeric($value) || !is_finite((float) $value) || abs((float) $value) > $limit) {
@@ -234,6 +235,9 @@ function ninetime_weather_request($query, $transport = null, $now = null) {
     $weather['provider'] = $provider;
     $weather['fetchedAt'] = $response['fetchedAt'];
     $weather['location'] = array('latitude' => (float) $latitude, 'longitude' => (float) $longitude);
+    $place = ninetime_location_nearest($latitude, $longitude);
+    if ($place !== null) $weather['location'] = array_merge($weather['location'], $place);
     $weather['attribution'] = $provider === 'openmeteo' ? 'Weather data by Open-Meteo (CC BY 4.0)' : 'Weather forecast from MET Norway (CC BY 4.0)';
+    if ($place !== null) $weather['attribution'] .= '; nearest populated place by GeoNames (CC BY 4.0)';
     return $weather;
 }

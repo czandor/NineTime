@@ -1,115 +1,60 @@
-
-function testInfo(type) {
-    
-    url=document.getElementById('info-config-url-'+type).value;
-    data=document.getElementById('info-config-data-'+type).value;
-    langnum=document.getElementById('info-config-language-'+type).value;
-    if (languages[langnum]) lang=languages[langnum][0];
-    else lang='en';
-    battery=randomInt(1,10)*10;
-    steps=randomInt(1,5000);
-    hrbpm_avg=randomInt(50,100);
-    hrbpm_min=randomInt(50,70);
-    hrbpm_max=randomInt(70,150);
-    from_time=Math.floor(new Date() / 1000)-600;
-    test=1;
-    var postdata = {
-        watchtoken       : watchtoken,
-        platform         : platform,
-        model            : model,
-        lang             : lang,
-        battery          : battery,
-        steps            : steps,
-        hrbpm_avg        : hrbpm_avg,
-        hrbpm_min        : hrbpm_min,
-        hrbpm_max        : hrbpm_max,
-        from_time        : from_time,
-        h24              : h24,
-        data             : data,
-        test             : 1,
-        pos              : (settings.info[type].usePos==1)?'{"coords":{"latitude":39.0437,"longitude":-77.4875,"accuracy":1000},"timestamp":1506694086366}':''
+var infoRequest = 0;
+function infoExampleSettings() {
+    var url = NINETIME_BASE_URL + '/info-example.php';
+    return {url:url, urlOK:url, language:0, usePos:0, period:60, data:''};
+}
+function getInfoSettings() {
+    // Keep the selected 1.92 record, including its confirmed URL and custom data.
+    if (!Array.isArray(settings.info)) settings.info = [infoExampleSettings()];
+    if (!settings.info[settings.infoType]) settings.infoType = 0;
+    if (!settings.info[settings.infoType]) settings.info[settings.infoType] = infoExampleSettings();
+    return settings.info[settings.infoType];
+}
+function restoreInfoExample() {
+    settings.infoType = 0;
+    settings.info[0] = infoExampleSettings();
+    infoChanged(); drawInfo();
+}
+function infoStatus(text, state) {
+    var element = document.getElementById('info-config-status-0');
+    if (!element) return;
+    element.textContent = text;
+    element.className = 'script-result' + (state ? ' script-result-' + state : '');
+}
+function infoChanged() { infoRequest++; infoStatus('', ''); }
+function infoCheck() {
+    var item = getInfoSettings();
+    var url = document.getElementById('info-config-url-0').value.trim();
+    if (!/^https?:\/\//i.test(url)) return infoStatus('Enter a complete HTTP or HTTPS script URL.', 'error');
+    var id = ++infoRequest, request = new XMLHttpRequest();
+    request.open('POST', NINETIME_BASE_URL + '/xhr.php?url=' + encodeURIComponent(url));
+    request.setRequestHeader('Content-Type', 'application/json'); request.timeout = 25000;
+    infoStatus('Testing with sample watch data…', 'pending');
+    request.onload = function () {
+        if (id !== infoRequest) return;
+        var data;
+        try { data = JSON.parse(request.responseText); }
+        catch (error) { return infoStatus('The script did not return valid JSON.', 'error'); }
+        if (request.status < 200 || request.status >= 300 || data.status !== 'ok' || typeof data.info !== 'string') {
+            return infoStatus('Expected JSON with status: "ok" and an info text.\n' + JSON.stringify(data, null, 2), 'error');
+        }
+        infoStatus('Preview: ' + data.info, 'success');
     };
-    xhrRequest(url, 'POST',
-      function(responseText) {
-        // responseText contains a JSON object with info
-        var json;
-        try {
-          json = JSON.parse(responseText);
-        }catch(e) {
-
-          infoError('ERROR EXEPTION\n'+responseText,type);
-          return;
-        }
-        if(("status" in json) && json.status == 'ok') {
-
-          infoSuccess('SUCCESS\n'+JSON.stringify(json, null, 4),type);
-        }
-        else{
-
-          infoError('ERROR STATUS\n'+JSON.stringify(json, null, 4),type);
-        } 
-    },JSON.stringify(postdata)); 
+    request.onerror = request.ontimeout = function () {
+        if (id === infoRequest) infoStatus('Could not reach the script. Check the address and try again.', 'error');
+    };
+    var language = languages[item.language] ? languages[item.language][0] : 'en';
+    request.send(JSON.stringify({watchtoken:watchtoken, platform:platform, model:model, lang:language,
+        battery:80, steps:1234, hrbpm_avg:0, hrbpm_min:0, hrbpm_max:0,
+        from_time:Math.floor(Date.now()/1000)-600, h24:h24, data:item.data, test:1,
+        pos:item.usePos == 1 ? JSON.stringify({coords:{latitude:47.4979,longitude:19.0402,accuracy:1000}}) : ''}));
 }
-
-
-function infoError(text,type) {
-    obj=document.getElementById('info-config-status-'+type);
-    if (obj) {
-        obj.innerHTML='<span><pre>'+text+'</pre></span>';
-    }
-}
-function infoSuccess(text,type) {
-    obj=document.getElementById('info-config-status-'+type);
-    if (obj) {
-        obj.innerHTML='<span><pre>'+text+'</pre></span>';
-    }
-    infoChanged();
-    settings.info[type].urlOK=settings.info[type].url;
-    drawInfo();
-}
-function infoCheckStart(type) {
-    obj=document.getElementById('info-config-status-'+type);
-    if (obj) {
-        obj.innerHTML='<span>Checking URL...</span>';
-    }
-}
-
-function infoCheck(check) {
-    type=settings.infoType;
-    if (!check) {
-        infoCheckStart(type);
-        setTimeout(function(){infoCheck(1);},1000);
-    }
-    else{
-        testInfo(type);
-    }
-}
-
-
-function infoDelete() {
-    settings.info[settings.infoType].urlOK='';
-    obj=document.getElementById('info-config-status-'+settings.infoType);
-    if (obj) {
-        obj.innerHTML='';
-    }
-    drawInfo();
-}
-function showInfoHelp() {
-    obj=document.getElementById('infohelp');
-    if (obj) obj.style.display='';
-}
-function hideInfoHelp() {
-    obj=document.getElementById('infohelp');
-    if (obj) obj.style.display='none';
-}
-function infoEnabled() { 
-    for (a=0 ; a<3 ; a++) {
-        //if (settings.horizontalPositions[a] == STATUS_H_INFO) return true;
-        if (getVerticalObject(settings.verticalPositions[a]).info) return true;
-        if (getHorizontalObject(settings.horizontalPositions[a]).info) return true;
+function infoDelete() { var item=getInfoSettings(); item.url=item.urlOK=''; infoChanged(); drawInfo(); }
+function showInfoHelp() { document.getElementById('infohelp').style.display=''; }
+function hideInfoHelp() { document.getElementById('infohelp').style.display='none'; }
+function infoEnabled() {
+    for (var i=0; i<3; i++) {
+        if (getVerticalObject(settings.verticalPositions[i]).info || getHorizontalObject(settings.horizontalPositions[i]).info) return true;
     }
     return false;
-}
-function infoChanged() {
-    document.getElementById('info-config-fetchnow').checked=true;
 }

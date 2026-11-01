@@ -87,12 +87,12 @@
 <br/>
 This WatchFace is completely free.<br/>
 If you like my work, please donate me by paypal.<br/>
-<a href="http://czandor.hu/pebble/info-help.php">Help for Info Script</a><br/>
+<a href="https://czandor.hu/pebble/info-help.php">Help for Info Script</a><br/>
 <br/>
 <pre>Keywords: analog, digital, customizable, big, bigfont, 9gag, health, heartrate, steps, pebble2, hr, weather, forecast, script, php, vibrate, color, holidays, seconds</pre>
 <br/>
 PBW file download Link:<br/>
-<a href="http://czandor.hu/pebble/NineTime.pbw">http://czandor.hu/pebble/NineTime.pbw</a><br/>
+<a href="https://czandor.hu/pebble/NineTime.pbw">https://czandor.hu/pebble/NineTime.pbw</a><br/>
 <br/>
 Rebble AppStore link:<br/>
 <a href="https://apps.rebble.io/en_US/application/59de171d461a8da6ca0025f9?dev_settings=true">NINETIME by Andor Czafik</a><br/>

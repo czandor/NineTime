@@ -5,7 +5,7 @@ function cancelClose() {
 function sendData() {
     normalizeWeatherSettings();
     //onScroll();
-    if (settings.info[settings.infoType].urlOK == '') settings.infoType=1;
+    var script = getInfoSettings();
     saveData();
     var options = {
       configIntText:buildIntStr(),
@@ -22,8 +22,9 @@ function sendData() {
       configInfoUsePos:settings.info[settings.infoType].usePos,
       configInfoData:settings.info[settings.infoType].data,
       configInfoLanguage:languages[settings.info[settings.infoType].language][0],
-      fetchWeatherNow:(document.getElementById('weather-config-fetchnow').checked && weatherEnabled())*1,
-      fetchInfoNow:(document.getElementById('info-config-fetchnow').checked && infoEnabled())*1,
+      fetchWeatherNow:1,
+      fetchInfoNow:(infoEnabled() && !!script.urlOK)*1,
+      configInfoEnabled:infoEnabled()*1,
       configForecastEnabled:weatherForecastEnabled()*1,
       configTextStringEnabled:customTextEnabled()*1,
       configWeatherLocationEnabled:weatherLocationEnabled()*1

@@ -36,7 +36,7 @@ function request(port, pathname, method = 'GET') {
   });
 }
 async function main() {
-  for (const command of [[process.execPath, ['tools/weather-test.cjs']], [process.env.PHP_BINARY || 'php', ['tools/weather-test.php']]]) {
+  for (const command of [[process.execPath, ['tools/weather-test.cjs']], [process.execPath, ['tools/info-test.cjs']], [process.env.PHP_BINARY || 'php', ['tools/weather-test.php']]]) {
     const result = cp.spawnSync(command[0], command[1], { cwd: root, encoding: 'utf8', windowsHide: true });
     check(result.status === 0, 'Weather regression suite: ' + (result.stderr || result.stdout));
   }
@@ -88,6 +88,10 @@ async function main() {
     check(home.status === 200 && /NineTime|NINETIME/.test(home.body), 'NineTime home page loads.');
     const preview = await request(port, '/pebble/ninetime/configpage.php?token=local-preview&platform=basalt&model=pebble_time&CONFIG_VERSION=2.00&h24=1&batt=75');
     check(preview.status === 200 && preview.body.includes('WatchFace style') && preview.body.includes('NINETIME_BASE_URL'), 'Configurator renders without a live database.');
+    check(preview.body.includes('settings.css') && preview.body.includes('settings-ui.js') && preview.body.includes('Restore example'), 'Redesigned settings and example controls render.');
+    check(!/info-config-fetchnow|weather-config-fetchnow|id="info-type-/.test(preview.body), 'No download checkboxes or old info tabs.');
+    const example=await request(port,'/pebble/info-example.php');
+    check(example.status===200 && /^W\d{2} \d{1,3}\/36[56]$/.test(JSON.parse(example.body).info), 'Working info example uses the original JSON protocol.');
     for (const file of ['/config/config.local.php', '/config/config.example.php', '/bootstrap.php', '/local-only/config/original-server-config.json']) {
       check((await request(port, file)).status === 404, 'Private file is outside the document root: ' + file);
     }
@@ -107,7 +111,8 @@ async function main() {
     for (const script of preview.body.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
       if (script[1].trim()) new vm.Script(script[1]);
     }
-    check(preview.body.includes('var actualVersion="2.00"'), 'Version 2.00 renders as valid JavaScript.');
+    check(preview.body.includes('var actualVersion="2.02"'), 'Version 2.02 renders as valid JavaScript.');
+    check(!preview.body.includes('weather-config-fetchnow'), 'Weather refresh checkbox removed.');
     console.log('Smoke tests passed: ' + assertions + ' assertions. No external service was contacted.');
   } finally {
     php.kill();

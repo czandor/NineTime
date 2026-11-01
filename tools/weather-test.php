@@ -3,6 +3,8 @@
 putenv('NINETIME_CONFIG_FILE=' . __DIR__ . '/../web/config/config.example.php');
 $cacheDirectory = __DIR__ . '/../web/var/weather-tests-' . getmypid();
 putenv('NINETIME_WEATHER_CACHE_DIR=' . $cacheDirectory);
+$locationDirectory = __DIR__ . '/../web/var/location-tests-' . getmypid();
+putenv('NINETIME_LOCATION_DIR=' . $locationDirectory);
 require_once __DIR__ . '/../web/weather.php';
 require_once __DIR__ . '/../web/weather-legacy.php';
 $checks = 0;
@@ -17,6 +19,19 @@ function rejects_weather($callback, $label) {
     throw new RuntimeException('Weather test failed: ' . $label);
 }
 $now = 1700000000;
+mkdir($locationDirectory, 0700, true);
+file_put_contents($locationDirectory . '/metadata.json', json_encode(array('schema' => 1)));
+$locations = array(
+    array(47.4979, 19.0402, 'Budapest', 'HU', 3054643, 1700000),
+    array(0, 0, 'Equator town', 'ZZ', 1, 1000),
+    array(-16.5, 179.9, 'Date line town', 'FJ', 2, 1000),
+    array(89.9, 170, 'Polar town', 'ZZ', 3, 1000),
+    array(49.99, 5.01, 'Across the tile edge', 'ZZ', 4, 1000),
+    array(49.85, 4.9, 'Farther in the same tile', 'ZZ', 5, 1000)
+);
+$tiles = array();
+foreach ($locations as $place) $tiles[(int) floor(($place[0] + 90) / 5) . '_' . (int) floor(($place[1] + 180) / 5)][] = $place;
+foreach ($tiles as $tile => $places) file_put_contents($locationDirectory . '/' . $tile . '.json', json_encode($places));
 $open = array(
     'current' => array('time' => $now, 'temperature_2m' => 12, 'relative_humidity_2m' => 70, 'wind_speed_10m' => 18, 'weather_code' => 0, 'is_day' => 0),
     'hourly' => array('time' => array(), 'temperature_2m' => array(), 'weather_code' => array())
@@ -36,6 +51,11 @@ for ($hour = 0; $hour <= 30; $hour++) {
     );
 }
 try {
+    check_weather(ninetime_location_nearest(47.498, 19.04)['name'] === 'Budapest', 'GPS city name');
+    check_weather(ninetime_location_nearest(0, 0)['name'] === 'Equator town', 'zero GPS coordinate lookup');
+    check_weather(ninetime_location_nearest(-16.5, -179.95)['name'] === 'Date line town', 'nearest city across the date line');
+    check_weather(ninetime_location_nearest(90, -10)['name'] === 'Polar town', 'nearest city at the pole');
+    check_weather(ninetime_location_nearest(49.99, 4.99)['name'] === 'Across the tile edge', 'nearest city in an adjacent tile');
     $a = ninetime_weather_openmeteo($open);
     $b = ninetime_weather_metno($met, $now);
     foreach (array($a, $b) as $weather) {
@@ -76,6 +96,7 @@ try {
     $query = array('provider' => 'openmeteo', 'latitude' => '47.49791234', 'longitude' => '19.0402', 'language' => 'hu');
     $first = ninetime_weather_request($query, $transport, $now);
     $second = ninetime_weather_request($query, $transport, $now + 100);
+    check_weather($first['location']['name'] === 'Budapest' && $first['location']['source'] === 'GeoNames', 'weather response includes GPS city');
     check_weather($requests === 1 && $first === $second, 'cache avoids repeated calls');
     ninetime_weather_request($query, $transport, $now + 1900);
     check_weather($requests === 2 && count($seen[1][1]) === 1 && strpos($seen[1][1][0], 'If-Modified-Since:') === 0, 'conditional cache revalidation');
@@ -108,6 +129,7 @@ try {
     check_weather(count($owmForecast['list']) === 8 && $owmForecast['list'][3]['weather'][0]['id'] === 200, 'legacy OWM list[3] forecast');
     check_weather($owmForecast['list'][0]['main']['temp_min'] === -5.0 && $owmForecast['list'][0]['main']['temp_max'] === 20.0, 'legacy OWM 24-hour range');
     $wu = ninetime_weather_legacy_request('wu', array('url' => 'http://api.wunderground.com/api/ignored/conditions/lang:HU/q/0,0.json'), $legacyTransport, $now);
+    check_weather($wu['current_observation']['display_location']['city'] === 'Equator town', 'legacy GPS response includes city name');
     check_weather($wu['response']['features']['conditions'] === 1 && $wu['current_observation']['relative_humidity'] === '70%', 'legacy WU current contract');
     check_weather($wu['current_observation']['icon'] === 'clear' && strpos($wu['current_observation']['icon_url'], 'nt_') !== false, 'legacy WU night contract');
     check_weather($wu['current_observation']['weather'] === 'Derült', 'legacy WU language');
@@ -129,11 +151,16 @@ try {
         rejects_weather(function () use ($url) { ninetime_weather_legacy_request(null, array('url' => $url)); }, 'legacy arbitrary URL rejected');
     }
     rejects_weather(function () use ($legacyTransport, $now) { ninetime_weather_legacy_request('wu', array('location' => 'pws:UNKNOWN'), $legacyTransport, $now); }, 'unresolved station ID is not guessed');
+    unlink($locationDirectory . '/metadata.json');
+    check_weather(ninetime_location_nearest(47.4979, 19.0402) === null, 'missing gazetteer has a safe fallback');
+    $withoutCity = ninetime_weather_request($query, $transport, $now);
+    check_weather($withoutCity['current']['temperatureC'] === 12.0 && !isset($withoutCity['location']['name']), 'weather remains usable if offline locations are unavailable');
     echo 'Weather PHP tests passed: ' . $checks . " assertions; no external service contacted.\n";
 } finally {
     // Delete only generated files in this test's own cache directory.
-    if (is_dir($cacheDirectory)) {
-        foreach (glob($cacheDirectory . '/*') as $file) if (is_file($file)) unlink($file);
-        rmdir($cacheDirectory);
+    foreach (array($cacheDirectory, $locationDirectory) as $directory) {
+        if (!is_dir($directory)) continue;
+        foreach (glob($directory . '/*') as $file) if (is_file($file)) unlink($file);
+        rmdir($directory);
     }
 }

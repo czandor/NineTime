@@ -10,6 +10,8 @@ if (isset($_GET['url']) && is_string($_GET['url']) &&
 }
 
 $url=$_GET['url'];
+// Use HTTPS for our own endpoints without changing saved legacy script addresses.
+$url=preg_replace('~^http://(www\.)?czandor\.hu/~i', 'https://czandor.hu/', $url);
 $postdata=file_get_contents('php://input');
 
 header("Content-Type: application/json;charset=utf-8");

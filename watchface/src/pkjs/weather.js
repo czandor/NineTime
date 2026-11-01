@@ -1,6 +1,16 @@
 var vars = require('./vars');
 var send = require('./send');
 var busy = false;
+var refreshQueued = false;
+
+function complete() {
+  busy = false;
+  if (refreshQueued) {
+    refreshQueued = false;
+    return downloadWeather(true);
+  }
+  send.sendDataToPebble();
+}
 
 function validPosition(latitude, longitude) {
   return latitude !== null && longitude !== null && latitude !== '' && longitude !== '' &&
@@ -24,9 +34,8 @@ function migrateSettings() {
 }
 
 function fail() {
-  busy = false;
   localStorage.setItem('weatherDownloaded', '2');
-  send.sendDataToPebble();
+  complete();
 }
 
 function request(url, callback) {
@@ -98,9 +107,8 @@ function fetchWeather(coords) {
   var identity = [provider, latitude, longitude, metric, language].join('|');
   if (localStorage.getItem('weatherRequestIdentity') === identity &&
       vars.getEpoch() - Number(localStorage.getItem('weatherLastDownload')) < vars.WEATHER_MIN_FREQ) {
-    busy = false;
     localStorage.setItem('weatherDownloaded', '1');
-    return send.sendDataToPebble();
+    return complete();
   }
   var url = vars.BASE_SITE_URL + '/weather.php?provider=' + encodeURIComponent(provider) +
     '&latitude=' + latitude + '&longitude=' + longitude + '&language=' + encodeURIComponent(language);
@@ -116,17 +124,22 @@ function fetchWeather(coords) {
     localStorage.setItem('weatherIconF', data.forecast.icon);
     localStorage.setItem('weatherCondition', data.condition || '');
     var city = localStorage.getItem('configWeatherLocation');
-    localStorage.setItem('weatherLocation', city ? city.split(',')[0].slice(0, 32) : latitude + ', ' + longitude);
+    if (!city && data.location && typeof data.location.name === 'string') city = data.location.name;
+    if (!city) city = language === 'hu' ? 'Ismeretlen hely' : (language === 'de' ? 'Unbekannter Ort' : 'Unknown location');
+    localStorage.setItem('weatherLocation', city.split(',')[0].slice(0, 32));
     localStorage.setItem('weatherLastDownload', vars.getEpoch());
     localStorage.setItem('weatherRequestIdentity', identity);
     localStorage.setItem('weatherDownloaded', '1');
-    busy = false;
-    send.sendDataToPebble();
+    complete();
   });
 }
 
-function downloadWeather() {
-  if (busy) return;
+function downloadWeather(force) {
+  if (busy) { if (force) refreshQueued = true; return; }
+  if (force) {
+    localStorage.setItem('weatherLastDownload', '0');
+    localStorage.setItem('locationLastDownload', '0');
+  }
   busy = true;
   migrateSettings();
   getPosition(fetchWeather);

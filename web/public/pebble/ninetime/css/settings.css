@@ -1,0 +1,71 @@
+/* Scoped to the configuration page; legacy control IDs and behaviours stay intact. */
+body.ninetime-settings { --ink:#192d38; --muted:#61717a; --accent:#11685f; --line:#dce3e3; background:#f2f4f1; color:var(--ink); font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+.ninetime-settings * { box-sizing:border-box; }
+.ninetime-settings [hidden] { display:none !important; }
+.ninetime-settings .header { height:auto; padding:0; min-width:320px; background:#fff; border:0; box-shadow:0 2px 14px #192d3812; }
+.ninetime-settings .header-main { display:flex; align-items:center; gap:10px; max-width:940px; margin:auto; padding:13px 20px; }
+.ninetime-settings .brand { display:flex; align-items:center; gap:9px; margin-right:auto; font-size:19px; font-weight:750; letter-spacing:-.5px; white-space:nowrap; }
+.ninetime-settings .brand img { width:28px; height:28px; }
+.ninetime-settings .version { font-size:11px; font-weight:600; letter-spacing:0; color:var(--accent); padding:3px 7px; background:#e9f3ee; border-radius:6px; }
+.ninetime-settings button,.ninetime-settings input[type="button"] { font-family:inherit; font-size:13px; font-weight:600; line-height:1.3; min-height:40px; border:1px solid var(--line); border-radius:8px; padding:9px 13px; background:#fff; color:var(--ink); cursor:pointer; }
+.ninetime-settings button:hover,.ninetime-settings input[type="button"]:hover { background:#edf3ef; border-color:#98b2a8; }
+.ninetime-settings .primary { color:#fff; background:var(--accent); border-color:var(--accent); }
+.ninetime-settings .primary:hover { background:#0a514a; }
+.ninetime-settings button:disabled { opacity:.35; cursor:default; }
+.ninetime-settings :focus-visible { outline:3px solid #5daea3; outline-offset:3px; }
+.ninetime-settings .settingsboxnavigate { display:flex; gap:3px; height:auto; overflow-x:auto; max-width:940px; margin:auto; padding:0 20px 10px; text-align:left; background:transparent; }
+.ninetime-settings .settingsboxnavigate button { flex-shrink:0; display:flex; align-items:center; gap:5px; min-height:34px; padding:5px 8px; border:0; background:#f3f5f2; font-size:11px; font-weight:600; }
+.ninetime-settings .settingsboxnavigate img { height:20px; width:auto; margin:0; border:0; background:transparent; }
+.ninetime-settings .page { max-width:940px; margin:auto; padding:145px 20px 48px; }
+.ninetime-settings .settingsbox { border:1px solid var(--line); border-radius:16px; margin:0 0 22px; padding:24px; background:#fff; overflow:hidden; }
+.ninetime-settings .settingsbox > .head { display:flex; align-items:center; gap:10px; height:auto; min-height:30px; padding:0; background:transparent; text-align:left; font-size:22px; font-weight:700; letter-spacing:-.5px; }
+.ninetime-settings .settingsbox > .head img { position:static; height:28px; width:auto; background:#f0f4ee; border-radius:5px; }
+.ninetime-settings .section-description { margin:7px 0 22px; font-size:13px; color:var(--muted); }
+.ninetime-settings .settings-group { min-width:0; margin:22px 0 0; border:1px solid var(--line); border-radius:12px; padding:6px 16px 12px; }
+.ninetime-settings .settings-group legend { padding:0 7px; font-size:11px; text-transform:uppercase; letter-spacing:1.3px; font-weight:750; color:var(--accent); }
+.ninetime-settings .inputrow { padding:13px 0; border-bottom:1px solid #eef1ee; }
+.ninetime-settings .inputrow:last-child { border:0; }
+.ninetime-settings .inputrow > .left,.ninetime-settings .inputrow > .right { float:none; display:block; width:100%; height:auto; min-height:0; text-align:left; padding:0; }
+.ninetime-settings .inputrow > .left { font-size:13px; font-weight:600; margin-bottom:7px; color:var(--ink); }
+.ninetime-settings .inputrow > .right { font-weight:400; }
+.ninetime-settings .inputrow .left span,.ninetime-settings .field-hint,.ninetime-settings .inputrow .right > span { font-size:12px; color:var(--muted); line-height:1.6; font-weight:400; }
+.ninetime-settings select,.ninetime-settings input[type="text"],.ninetime-settings input[type="url"] { font-family:inherit; font-size:14px; line-height:1.4; color:var(--ink); background:#f9faf8; border:1px solid #cbd5d2; border-radius:7px; min-height:42px; padding:9px 10px; max-width:100%; width:100%; }
+.ninetime-settings input[type="checkbox"] { accent-color:var(--accent); width:18px; height:18px; vertical-align:middle; margin:4px 8px 4px 0; }
+.ninetime-settings input[type="checkbox"] + label { font-size:13px; font-weight:400; }
+.ninetime-settings .inputrow select { width:100%; }
+.ninetime-settings .hidden-box { transition:none; }
+.ninetime-settings .row-analog { padding-left:130px; }
+.ninetime-settings .tabs { display:flex; gap:6px; padding:0 0 18px; }
+.ninetime-settings .tabs .clear { display:none; }
+.ninetime-settings .settingsbox .tabs .tabs-tab { float:none; height:auto; min-height:58px; width:25%; border:1px solid var(--line); border-radius:9px; background:#f7f9f5; padding:10px 4px; font-size:13px; }
+.ninetime-settings .settingsbox .tabs .tabs-tab.selected { color:var(--accent); border:1px solid #83b8a7; background:#edf6f0; }
+.ninetime-settings .tabs .tabs-tab span { font-size:10px; letter-spacing:0; white-space:normal; line-height:1.2; display:inline-block; }
+.ninetime-settings .config .subtabs .tabs-tab { background:#f3f5f2; border:1px solid var(--line); border-radius:7px; height:auto; min-height:34px; padding:5px 2px; font-size:12px; }
+.ninetime-settings .config .subtabs .tabs-tab.selected { background:#e6f1eb; border-color:#83b8a7; color:var(--accent); }
+.ninetime-settings .config-row-explain { font-size:12px; color:var(--muted); background:transparent; padding:10px 0 4px; }
+.ninetime-settings .config-row { border:0; border-radius:9px; background:#f6f8f4; margin-bottom:8px; padding:10px 6px 10px 55px; height:auto; min-height:100px; }
+.ninetime-settings .config-row:after { content:""; display:block; clear:both; }
+.ninetime-settings .config-font-head,.ninetime-settings .config-color-head,.ninetime-settings .config-bg-head { color:var(--muted); font-size:10px; font-weight:500; height:auto; min-height:20px; }
+.ninetime-settings .select-color { border:1px solid #9aa8a3; border-radius:6px; box-shadow:0 2px 3px #192d3810; }
+.ninetime-settings .settings-group .config-row { display:flex; align-items:flex-end; flex-wrap:wrap; gap:10px; padding:12px 0; margin:0; background:transparent; min-height:0; }
+.ninetime-settings .settings-group .config-color { float:none; width:auto; flex:1; margin:0; padding:0; min-width:48px; }
+.ninetime-settings .settings-group .select-color { margin:4px 0 0; width:100%; max-width:66px; height:36px; }
+.ninetime-settings .palette-preview { display:flex; align-items:center; gap:12px; width:100%; flex-shrink:0; padding:12px; border:0; border-bottom:3px solid; border-radius:7px; margin-bottom:7px; font:600 22px/1.4 monospace; }
+.ninetime-settings .palette-mark { padding:2px 8px; border-radius:3px; }
+.ninetime-settings .field-hint { margin:9px 0 0; }
+.ninetime-settings .verticons-box { bottom:0; }
+.ninetime-settings .vertical-status-icon { display:flex !important; gap:8px; align-items:center; }
+.ninetime-settings .vertical-status-icon img { float:none; margin:0 !important; border-radius:6px; min-width:32px; }
+.ninetime-settings .script-actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.ninetime-settings .script-result { display:none; white-space:pre-wrap; overflow-wrap:anywhere; padding:14px; border-radius:8px; background:#f3f5f2; font:12px/1.6 monospace; }
+.ninetime-settings .script-result:not(:empty) { display:block; }
+.ninetime-settings .script-result-error { background:#fff1ec; color:#9b3627; }
+.ninetime-settings .script-result-success { background:#edf6f0; color:#11685f; }
+.ninetime-settings .automatic-note { background:#edf6f0; color:#236356; padding:12px 14px; border-radius:8px; font-size:12px; margin:16px 0 0; }
+.ninetime-settings a { color:var(--accent); overflow-wrap:anywhere; }
+.ninetime-settings .page > small { display:block; padding:0 12px; color:var(--muted); font-size:10px; }
+.ninetime-settings .colorpickercontent,.ninetime-settings .loadsavecontent,.ninetime-settings .infohelpcontent { border:0; border-radius:14px; box-shadow:0 16px 60px #192d3840; }
+.ninetime-settings .loadsavecontent,.ninetime-settings .infohelpcontent { max-width:800px; }
+.ninetime-settings .loadsavecontent .settingsbox,.ninetime-settings .infohelpcontent .settingsbox { margin:0; }
+@media(min-width:680px) { .ninetime-settings .inputrow { display:flex; flex-wrap:wrap; align-items:center; gap:12px; } .ninetime-settings .inputrow > .left { width:34%; margin:0; } .ninetime-settings .inputrow > .right { flex:1; width:60%; } .ninetime-settings .inputrow > .clear { display:none; } }
+@media(max-width:480px) { .ninetime-settings .header-main { padding:10px 12px; gap:6px; flex-wrap:wrap; } .ninetime-settings .brand { width:100%; margin-bottom:3px; } .ninetime-settings .header-main button { flex:1; } .ninetime-settings .settingsboxnavigate { padding:0 12px 8px; } .ninetime-settings .page { padding:180px 10px 30px; } .ninetime-settings .settingsbox { padding:18px 14px; border-radius:12px; } .ninetime-settings .settings-group { padding:6px 11px 12px; } .ninetime-settings .settings-group .config-row { gap:6px; } .ninetime-settings .settings-group .config-color { min-width:37px; } .ninetime-settings .settingsbox .tabs .tabs-tab { font-size:11px; } }

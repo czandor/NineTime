@@ -12,7 +12,7 @@ function storage(initial) {
 const valid = {
   current: { temperatureC: 12, humidity: 70, windKph: 18, icon: 9 },
   forecast: { minC: -5, maxC: 20, icon: 10, hours: 24 },
-  condition: 'Clear', provider: 'openmeteo'
+  condition: 'Clear', provider: 'openmeteo', location: {name:'Resolved city'}
 };
 function phone(overrides = {}, options = {}) {
   const memory = storage({ configWeatherProvider: 'openmeteo', configWeatherLatitude: 47.4979,
@@ -44,7 +44,7 @@ function phone(overrides = {}, options = {}) {
     }
   };
   vm.createContext(context); vm.runInContext(read('watchface/src/pkjs/weather.js'), context);
-  return { memory, context, requests, run: () => context.module.exports.downloadWeather(), sends: () => sends, gpsRequests: () => gpsRequests };
+  return { memory, context, requests, run: force => context.module.exports.downloadWeather(force), sends: () => sends, gpsRequests: () => gpsRequests };
 }
 let test = phone(); test.run();
 check(test.memory.getItem('weatherDownloaded') === '1', 'successful phone download');
@@ -54,11 +54,18 @@ check(test.memory.getItem('weatherIconC') === '9' && test.memory.getItem('weathe
 check(test.memory.getItem('weatherLocation') === 'Budapest', 'watch city label');
 check(test.requests.length === 1 && test.sends() === 1, 'current and forecast use one request');
 test.run(); check(test.requests.length === 1 && test.sends() === 2, 'phone cache');
+test.run(true); check(test.requests.length === 2, 'settings refresh bypasses the phone weather cache');
 check(!test.requests[0].url.includes('apikey') && !test.requests[0].url.includes('token'), 'keyless request URL');
 test = phone({ configWeatherProvider: 'metno', configWeatherMetric: 0 }); test.run();
 check(test.requests[0].url.includes('provider=metno'), 'second provider selection');
 check(test.memory.getItem('tempCurrent') === '54' && test.memory.getItem('tempMin') === '23', 'Fahrenheit conversion');
 check(test.memory.getItem('weatherWindspeed') === '11', 'mph conversion');
+for (const provider of ['openmeteo','metno']) {
+  test = phone({configWeatherProvider:provider,configWeatherLocation:''}); test.run();
+  check(test.memory.getItem('weatherLocation') === 'Resolved city', 'GPS label uses resolved city for '+provider);
+}
+test = phone({configWeatherLocation:''}, {body:JSON.stringify({...valid,location:{}})}); test.run();
+check(test.memory.getItem('weatherLocation') === 'Unknown location' && test.memory.getItem('weatherDownloaded') === '1', 'missing city does not break weather or expose coordinates as the label');
 test = phone({ configWeatherProvider: 'retired-provider', configWeatherAPIKey: 'old-private-value',
   weatherLastURL: 'old-private-url', configWeatherLocationId: 'retired-id' }); test.run();
 check(test.memory.getItem('configWeatherProvider') === 'openmeteo', 'legacy provider migration');
@@ -79,6 +86,10 @@ test = phone({}, { deferred: true }); test.run(); test.run();
 check(test.requests.length === 1, 'concurrent requests coalesce');
 test.requests[0].finish(); test.requests[0].ontimeout();
 check(test.sends() === 1, 'completion delivered once');
+test = phone({}, {deferred:true}); test.run();
+test.memory.setItem('configWeatherProvider','metno'); test.run(true); test.requests[0].finish();
+check(test.requests.length === 2 && test.requests[1].url.includes('provider=metno') && test.sends() === 0, 'saving during an active download queues the latest settings');
+test.requests[1].finish(); check(test.sends() === 1, 'queued settings refresh completes once');
 
 const browserMemory = storage({ 'weather-pmkey-pin-input': '12345', 'configWeatherAPIKey': 'obsolete' });
 const browser = {
@@ -110,6 +121,7 @@ function configuratorPayload(version) {
     dateNameEnabled:()=>false, weatherConditionTextEnabled:()=>true, infoEnabled:()=>false,
     weatherEnabled:()=>true, weatherForecastEnabled:()=>true, weatherLocationEnabled:()=>true,
     languages:[['en']] };
+  page.getInfoSettings=()=>settings.info[settings.infoType];
   vm.createContext(page); vm.runInContext(read('web/public/pebble/ninetime/js/send.js'),page);
   page.buildIntStr=()=>''; page.sendData();
   return JSON.parse(decodeURIComponent(page.document.location.split('#')[1]));
@@ -117,9 +129,30 @@ function configuratorPayload(version) {
 const legacyOptions = configuratorPayload(1.92);
 check(!('configWeatherProvider' in legacyOptions) && !('configWeatherMetric' in legacyOptions), '1.xx companion retains its existing weather routing and units');
 check(configuratorPayload(2).configWeatherProvider === 'metno', '2.00 companion receives the new provider');
+check(configuratorPayload(2).fetchWeatherNow === 1 && configuratorPayload(1.92).fetchWeatherNow === 1, 'every settings submission requests weather, including legacy companions');
+
+function saveSettings(options = {}, fail = false) {
+  const handlers = {}, calls = [], memory = storage({weatherLastDownload:1699999999});
+  const page = {localStorage:memory,setTimeout:fn=>fn(),console:{log:()=>{}},
+    require:name=>name==='./weather'?{downloadWeather:force=>calls.push(['weather',force])}:
+      name==='./info'?{downloadInfo:()=>calls.push(['info'])}:
+      {PKIT_WEATHER:2,PKIT_INFO:3,PKIT_WEATHER_INFO:4,PKIT_INIT:5},
+    Pebble:{addEventListener:(name,fn)=>{handlers[name]=fn;},sendAppMessage:(_,success,error)=>fail?error():success()}};
+  vm.createContext(page);vm.runInContext(read('watchface/src/pkjs/index.js'),page);
+  handlers.webviewclosed({response:encodeURIComponent(JSON.stringify({configIntText:'test',...options}))});
+  return {calls,memory,handlers};
+}
+let saved = saveSettings({fetchWeatherNow:0});
+check(saved.calls.length === 1 && saved.calls[0][0] === 'weather' && saved.calls[0][1] === true, 'phone refreshes after a save even when an old page sends an unchecked flag');
+saved = saveSettings({fetchInfoNow:0,configInfoEnabled:1,configInfoURL:'https://example.test/info'});
+check(saved.calls.length === 2 && saved.calls[1][0] === 'info', 'settings save can refresh weather and info together');
+check(saveSettings({configInfoEnabled:0,configInfoURL:'https://example.test/info'}).calls.length === 1, 'inactive info widget does not fetch');
+check(saveSettings({},true).calls.length === 0, 'failed settings transfer does not fetch for unapplied settings');
+saved=saveSettings();saved.calls.length=0;saved.handlers.webviewclosed({response:''});
+check(saved.calls.length === 0, 'closing settings without saving does not refresh');
 
 const pkg = JSON.parse(read('watchface/package.json'));
-check(pkg.version === '2.0.0' && read('web/public/pebble/ninetime/version.txt').trim() === '2.00', 'version 2.00');
-check(/CONFIG_VERSION_MAJOR 2/.test(read('watchface/src/c/const.h')) && /CONFIG_VERSION_MINOR 0/.test(read('watchface/src/c/const.h')), 'watch configuration version');
+check(pkg.version === '2.2.0' && read('web/public/pebble/ninetime/version.txt').trim() === '2.02', 'version 2.02');
+check(/CONFIG_VERSION_MAJOR 2/.test(read('watchface/src/c/const.h')) && /CONFIG_VERSION_MINOR 2/.test(read('watchface/src/c/const.h')), 'watch configuration version');
 check(!pkg.pebble.targetPlatforms.includes('emery'), 'PBT2 remains a future 3.xx port');
 console.log('Weather JavaScript tests passed: ' + assertions + ' assertions; no external service contacted.');

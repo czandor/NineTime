@@ -110,7 +110,6 @@ function weatherCitySelect(index) {
     location.longitude = Number(place.longitude);
     document.getElementById('weather-city-results').hidden = true;
     weatherCityStatus('Location saved.', false);
-    weatherChanged();
     saveData();
     drawWeather();
 }
@@ -124,7 +123,6 @@ function weatherCityDelete() {
     var results = document.getElementById('weather-city-results');
     if (results) results.hidden = true;
     weatherCityStatus('', false);
-    weatherChanged();
     drawWeather();
 }
 
@@ -163,7 +161,4 @@ function weatherLocationEnabled() {
       if (('weatherlocation' in getHorizontalObject(settings.horizontalPositions[a])) && getHorizontalObject(settings.horizontalPositions[a]).weatherlocation) return true;
     }
     return false;
-}
-function weatherChanged() {
-    document.getElementById('weather-config-fetchnow').checked=true;
 }

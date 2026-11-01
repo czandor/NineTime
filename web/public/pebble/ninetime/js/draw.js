@@ -11,56 +11,22 @@ function reDraw() {
     drawWeather();
     drawDate();
     drawInfo();
+    if(typeof updateSettingsUI === 'function') updateSettingsUI();
 }
 function drawInfo() {
-    obj=document.getElementById('infobox');
-    if (infoEnabled()) {
-        showBox(obj);
-        obj=document.getElementById('infobox-scrollimg');
-        if (obj) {
-            obj.style.opacity='1';
-            obj.style.pointerEvents='';
-        }
-        obj=document.getElementById('info-type-'+settings.infoType);
-        addClassname(obj,'selected');
-        obj=document.getElementById('info-config-'+settings.infoType);
-        showBox(obj);
-        obj=document.getElementById('info-config-url-'+settings.infoType);
-        if (obj) obj.value=settings.info[settings.infoType].url;
-        obj=document.getElementById('info-config-urlOK-'+settings.infoType);
-        if (obj) {
-            obj2=document.getElementById('info-config-url-delete-'+settings.infoType);
-            if(settings.info[settings.infoType].urlOK != '') {
-                obj.value=settings.info[settings.infoType].urlOK;
-                if (obj2) obj2.style.display='';
-            }
-            else {
-                obj.value='Plase add your custom info script url';
-                if (obj2) obj2.style.display='none';
-            }
-        }
-        obj=document.getElementById('info-config-usepos-'+settings.infoType);
-        if (obj) obj.checked=(settings.info[settings.infoType].usePos==1);
-        obj=document.getElementById('info-config-data-'+settings.infoType);
-        if (obj) if(settings.infoType == 1) obj.checked=(settings.info[settings.infoType].data=='1');
-                 else obj.value=settings.info[settings.infoType].data;
-        obj=document.getElementById('info-config-language-'+settings.infoType);
-        if(obj) {
-            obj.innerHTML=buildLanguages();
-            obj.value=settings.info[settings.infoType].language;
-            //void 0;
-        }
-        obj=document.getElementById('info-refresh-'+settings.infoType);
-        if (obj) obj.value=settings.info[settings.infoType].period;
-    }
-    else {
-        hideBox(obj);
-        obj=document.getElementById('infobox-scrollimg');
-        if (obj) {
-            obj.style.opacity='0.5';
-            obj.style.pointerEvents='none';
-        }
-    }
+    var enabled=infoEnabled(), box=document.getElementById('infobox');
+    if(enabled) showBox(box); else hideBox(box);
+    var shortcut=document.getElementById('infobox-scrollimg');
+    if(shortcut) {shortcut.style.opacity=enabled?'1':'0.5';shortcut.style.pointerEvents=enabled?'':'none';}
+    var item=getInfoSettings();
+    document.getElementById('info-config-url-0').value=item.urlOK || item.url || '';
+    document.getElementById('info-config-data-0').value=item.data || '';
+    document.getElementById('info-config-usepos-0').checked=item.usePos == 1;
+    var language=document.getElementById('info-config-language-0');
+    language.innerHTML=buildLanguages();language.value=item.language;
+    document.getElementById('info-refresh-0').value=item.period;
+    var hint=document.getElementById('info-http-note');
+    hint.hidden=!/^http:\/\//i.test(item.urlOK || item.url || '');
 }
 function drawDate() {
     obj=document.getElementById('datebox');

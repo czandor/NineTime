@@ -85,7 +85,7 @@ function ninetime_weather_legacy_request($format, $query, $transport = null, $no
     $language = isset($languages[$language]) ? $languages[$language] : 'en';
     $weather = ninetime_weather_request(array('provider' => ninetime_config('weather.legacy_provider', 'metno'),
         'latitude' => $place['latitude'], 'longitude' => $place['longitude'], 'language' => $language), $transport, $now);
-    $name = $place['name'] !== '' ? $place['name'] : $place['latitude'] . ', ' . $place['longitude'];
+    $name = $place['name'] !== '' ? $place['name'] : (isset($weather['location']['name']) ? $weather['location']['name'] : 'Unknown location');
     $current = $weather['current'];
     $forecast = $weather['forecast'];
     $temperature = function ($celsius, $units) { return $units === 'metric' ? $celsius : ($units === 'standard' ? $celsius + 273.15 : $celsius * 1.8 + 32); };

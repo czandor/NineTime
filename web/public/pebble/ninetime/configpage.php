@@ -49,10 +49,12 @@ require("common.inc.php");
 
 if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start from phone");
 ?>
-<html>
+<!doctype html>
+<html lang="en">
     <head>
         <meta http-equiv="Content-type" content="text/html; charset=utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0, user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>NineTime settings</title>
         <script>
             var NINETIME_BASE_URL = <?=json_encode(ninetime_url(''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)?>;
             var platform='<?=$platform?>';
@@ -81,6 +83,7 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
         <script src="js/draw.js?<?=filemtime("js/draw.js")?>"></script>
         <script src="js/const.js?<?=filemtime("js/const.js")?>"></script>
         <script src="js/js.js?<?=filemtime("js/js.js")?>"></script>
+        <script src="js/settings-ui.js?<?=filemtime("js/settings-ui.js")?>"></script>
         <script>
             //loadData();
             //saveData(1);
@@ -90,23 +93,26 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
 
 
         <link rel="stylesheet" type="text/css" href="css/style.css?<?=filemtime("css/style.css")?>">
+        <link rel="stylesheet" href="css/settings.css?<?=filemtime("css/settings.css")?>">
+        <script>document.addEventListener("DOMContentLoaded",init);</script>
     </head>
 
-<body onload="init();" onunload="deinit();">
-<div class="header" id="div-header">
-    <div class="header-undo"><img onclick="cancelClose();" src="images/undo.png" /></div>
-    <div class="header-left"><img src="images/appicon-color.png" />NineTime</div>
-    <div class="header-center"><button onclick="showLoadSave()">Load/Save</button></div>
-    <div class="header-right"><button onclick="sendData()">Send to watch</button></div>
-    <div class="clear"></div>
-    <div class="settingsboxnavigate"><div>Scroll to settings:</div>
-    <?php
-    foreach($settingboxes as $box){
-        ?><img id='<?=$box[0]?>-scrollimg' onclick="document.getElementById('<?=$box[0]?>').scrollIntoView();window.scrollBy({top:-90,left:0,behavior:'smooth'})" style="" src="images/<?=$box[1]?>.png" /><?php
-    }
-    ?>
+<body class="ninetime-settings" onunload="deinit();">
+<header class="header" id="div-header">
+    <div class="header-main">
+        <div class="brand"><img src="images/appicon-color.png" alt="" />NineTime <span class="version"><?=htmlspecialchars($actualVersion)?></span></div>
+        <button onclick="cancelClose()">Cancel</button>
+        <button onclick="showLoadSave()">Profiles</button>
+        <button class="primary" onclick="sendData()">Save to watch</button>
     </div>
-</div>
+    <nav class="settingsboxnavigate" aria-label="Settings sections">
+    <?php
+    $navigationLabels=array('Face','Sidebar','Row','Extra rows','Alerts','Weather','Date','Info','Text','About');
+    foreach($settingboxes as $key=>$box){ ?>
+        <button type="button" onclick="scrollToSettings('<?=$box[0]?>')"><img id="<?=$box[0]?>-scrollimg" src="images/<?=$box[1]?>.png" alt="" /><?=$navigationLabels[$key]?></button>
+    <?php } ?>
+    </nav>
+</header>
 <div class="page" id="div-page">
     <div class="settingsbox" id="facebox">
         <div class="head"><img src="images/config-icon-face<?=($platform == "chalk" && $CONFIG_VERSION >= 1.3)?"-round":""?>.png" />WatchFace style</div>
@@ -270,7 +276,7 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
         
         <div class="head"><img src="images/config-icon-vert<?=($platform == "chalk" && $CONFIG_VERSION >= 1.3)?"-round":""?>.png" />Vertical column settings</div>
         <?php
-        faceRow("5",0,"Colors",false);
+        faceRow("5",0,"",false);
         ?>
         <div class="inputrow" style="<?=($platform == "chalk" && $CONFIG_VERSION >= 1.3)?" display: none;":""?>">
             <div class="left">Column position</div>
@@ -362,7 +368,7 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
     <div class="settingsbox" id="horizontal1box">
         <div class="head"><img src="images/config-icon-hor<?=($platform == "chalk" && $CONFIG_VERSION >= 1.3)?"-round":""?>.png" />Horizontal row settings</div>
         <?php
-        faceRow("6",0,"Colors",false);
+        faceRow("6",0,"",false);
         ?>
         <div class="inputrow">
             <div class="left">Row position</div>
@@ -398,7 +404,7 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
     <div class="settingsbox hidden-box" id="horizontal2box" style="">
         <div class="head"><img src="images/config-icon-hor2<?=($platform == "chalk" && $CONFIG_VERSION >= 1.3)?"-round":""?>.png" />Horizontal (second) row settings</div>
         <?php
-        faceRow("7",0,"Colors",false);
+        faceRow("7",0,"",false);
         ?>
         <div class="inputrow">
             <div class="left">Content</div>
@@ -599,15 +605,12 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
             <div class="clear"></div>
         </div>
         </div>
-        <div class="inputrow">
-            <label for="weather-config-fetchnow">Fetch weather after saving</label>
-            <input type="checkbox" id="weather-config-fetchnow" />
-        </div>
+        <p class="automatic-note">Weather refreshes automatically when you save settings to the watch.</p>
         <p class="weather-note">Forecast: next 24 hours. Data from
             <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> or
             <a href="https://www.met.no/" target="_blank" rel="noopener">MET Norway</a>
             under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.
-            Location search: Open-Meteo / GeoNames.</p>
+            Location search: Open-Meteo / GeoNames. GPS city names: nearest populated place from <a href="https://www.geonames.org/" target="_blank" rel="noopener">GeoNames</a>.</p>
     </div>
 
     <div class="settingsbox hidden-box" id="datebox" style="">
@@ -663,106 +666,28 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
         </div>
     </div>
     <div class="settingsbox hidden-box" id="infobox">
-        <div class="head"><img src="images/config-icon-info.png" />*Info script settings</div>
-        <div class="config" style="padding-bottom: 0;">
-            <div class="subtabs">
-            <?php
-            for($key=count($infoTypes)-1; $key >= 0 ; $key--){ $value=$infoTypes[$key]; ?>
-                <div onclick="change(this)" id="info-type-<?=$key?>" class="tabs-tab" style="width: <?=(100/count($infoTypes)-4)?>%;"><?=$value?></div>
-            <?php } ?>
-            <div class="clear"></div>
-            </div>
-        </div>
-        <?php foreach($infoTypes as $key=>$value){ ?>
-        <div id="info-config-<?=$key?>" class="hidden-box">
-            <div class="inputrow" style="<?=($key>0)?"display: none; ":""?>">
-                <div class="left" style="text-align: left;">URL</div>
-                <div class="right" style="text-align: right;"><input type="button" onclick="showInfoHelp();" value="Help" /></div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow" style="<?=($key>0)?"display: none; ":""?>">
-                <div class="right" style="width: 75%; padding-left:0;">
-                    <input type="text" id="info-config-url-<?=$key?>" onchange="change(this)" placeholder="http://" style="width: 100%;" />
-                </div>
-                <div class="right" style="width: 25%;">
-                    <input id="info-config-url-check-<?=$key?>" onclick="change(this)" type="button" style="width:86px;" value="Test &amp Save" />
-                </div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow" style="<?=($key>0)?"display: none; ":""?>">
-                <div class="right" style="width: 90%; padding-left:0;">
-                    <input type="text" id="info-config-urlOK-<?=$key?>" onchange="change(this)" style="width: 100%; background-color: #EEEEEE;" />
-                </div>
-                <div class="right" style="width: 10%;">
-                    <input id="info-config-url-delete-<?=$key?>" onclick="change(this)" type="button" style="width:30px; display: none;" value="X" />
-                </div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow" style="<?=($key>0)?"display: none; ":""?>">
-                <div class="right" style="width: 100%; padding-left:0;">
-                    <input type="checkbox" id="info-config-usepos-<?=$key?>" onchange="change(this)" /><label for="info-config-usepos-<?=$key?>">Send actual position</label>
-                </div>
-                <div class="clear"></div>
-            </div>
-            <?php if($key == 1){ ?>
-            <div class="inputrow" style="display: none;">
-                <div class="right" style="width: 100%; padding-left:0;">
-                    <input type="checkbox" id="info-config-data-<?=$key?>" onchange="change(this)" />
-                    <label for="info-config-data-<?=$key?>">Also show the word as a notification</label>
-                </div>
-                <div class="clear"></div>
-            </div>
-            <?php } else { ?>
-            <div class="inputrow" style="<?=($key>0)?"display: none; ":""?>">
-                <div class="left" style="text-align: left; width: 100%;">Custom data field value</div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow">
-                <div class="right" style="width: 100%; padding-left:0;">
-                    <input type="text" id="info-config-data-<?=$key?>" onchange="change(this)" style="width:100%;" />
-                </div>
-                <div class="clear"></div>
-            </div>
-            <?php } ?>
-            <div class="inputrow" style="<?=($key>0)?"display: none; ":""?>">
-                <div class="right" style="width: 100%; padding-left:0;">Test result
-                    <div id="info-config-status-<?=$key?>" style="width:100%;height: 100px; overflow-y: scroll; border: 1px solid Silver; background-color: #EEEEEE;" /></div>
-                </div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow" style="">
-                <div class="left" style="">
-                    Refresh time
-                </div>
-                <div class="right">
-                    <select id="info-refresh-<?=$key?>" onchange="change(this)">
-                        <?php
-                        foreach($refreshtimes as $key2=>$value2){
-                            ?>
-                            <option value="<?=$key2?>"><?=$value2?></option>
-                            <?php
-                        }
-                        ?>
-                    </select>
-                </div>
-                <div class="clear"></div>
-            </div>
-            <div class="inputrow" style="">
-                <div class="left" style="">Language</div>
-                <div class="right">
-                    <select id="info-config-language-<?=$key?>" onchange="change(this)"></select>
-                </div>
-                <div class="clear"></div>
-            </div>
-        </div>
-        <?php } ?>
-        <div class="inputrow" style="">
-            <div class="left" style=""><span>Force download to watch</span></div>
-            <div class="right">
-                <input type="checkbox" id="info-config-fetchnow" /><label for="info-config-fetchnow">Fetch now</label>
-            </div>
-            <div class="clear"></div>
-        </div>
+        <div class="head"><img src="images/config-icon-info.png" alt="" />Info script</div>
+        <fieldset class="settings-group"><legend>Script</legend>
+            <div class="inputrow"><div class="left"><label for="info-config-url-0">Script URL</label></div>
+                <div class="right"><input type="url" id="info-config-url-0" onchange="change(this)" placeholder="https://your-site.example/info" /></div></div>
+            <p class="field-hint" id="info-http-note" hidden>Your existing HTTP address is kept. You can switch to HTTPS if your script supports it.</p>
+            <div class="script-actions"><button id="info-config-url-check-0" onclick="change(this)">Test script</button><button onclick="showInfoHelp()">Script help</button></div>
+            <pre id="info-config-status-0" class="script-result" role="status" aria-live="polite"></pre>
+            <div class="inputrow"><div class="left"><label for="info-config-data-0">Custom data</label></div>
+                <div class="right"><input type="text" id="info-config-data-0" onchange="change(this)" /></div></div>
+            <p class="field-hint">Passed to your script as the data field. Leave it empty if your script does not need it.</p>
+            <div class="inputrow"><input type="checkbox" id="info-config-usepos-0" onchange="change(this)" /><label for="info-config-usepos-0">Share GPS position with this script</label></div>
+        </fieldset>
+        <fieldset class="settings-group"><legend>Updates</legend>
+            <div class="inputrow"><div class="left"><label for="info-refresh-0">Refresh interval</label></div><div class="right">
+                <select id="info-refresh-0" onchange="change(this)"><?php foreach($refreshtimes as $key=>$value){ ?><option value="<?=$key?>"><?=$value?></option><?php } ?></select>
+            </div></div>
+            <div class="inputrow"><div class="left"><label for="info-config-language-0">Script language</label></div>
+                <div class="right"><select id="info-config-language-0" onchange="change(this)"></select></div></div>
+        </fieldset>
+        <p class="automatic-note">When Info is selected on your watch face, saving settings also downloads fresh script text.</p>
+        <div class="script-actions"><button onclick="restoreInfoExample()">Restore example</button><button onclick="infoDelete()">Clear script URL</button></div>
+        <p class="field-hint">The example shows the ISO week and day of the year, such as W44 305/365. It needs no account or location. Restoring it replaces the selected script settings.</p>
     </div>
     <div class="settingsbox hidden-box" id="customtextbox" style="">
         <div class="head"><img src="images/config-icon-text.png" />**Custom text</div>
@@ -799,8 +724,8 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
                 <span>
                     Due the Pebble server is not fully functioning, I can not guarantie, that the app is updating automatically from Pabble AppStore.<br/>
                     You can download my latest version of this watchface from<br/>
-                    <a href="http://czandor.hu/pebble/NineTime.pbw">http://czandor.hu/pebble/NineTime.pbw</a><br/>
-                    <input type="text" value="http://czandor.hu/pebble/NineTime.pbw" id="downloadUrlInput">&nbsp;<button onclick="copyClipboard(document.getElementById('downloadUrlInput'))">Copy URL</button><br/>
+                    <a href="https://czandor.hu/pebble/NineTime.pbw">https://czandor.hu/pebble/NineTime.pbw</a><br/>
+                    <input type="text" value="https://czandor.hu/pebble/NineTime.pbw" id="downloadUrlInput">&nbsp;<button onclick="copyClipboard(document.getElementById('downloadUrlInput'))">Copy URL</button><br/>
                     If you like my watchface, and when you want to receive an update notification by e-mail, please donate me any contribution amount (eg 1 USD), and then I can send an update link to your PayPal email address.<br/>
                     With your support, you really help me keep the application up-to-date.
                 </span>
@@ -968,7 +893,7 @@ pebbleBatt: <?=$_GET['batt']?><br/>
     info: The string you want to display on the watch. Please note that the watch can not display long text.
 }
 </pre>
-                    When you enter your script's url, push the Test &amp; Save button to test it. After the test was successful, the url will be saved.
+                    Enter your script URL and use Test script for a preview with sample data. Save to watch applies the URL and downloads fresh text. Testing is optional.
                 </div>
             </div>
 

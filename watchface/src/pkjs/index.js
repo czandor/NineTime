@@ -45,8 +45,8 @@ function initStorage(force){
   if(force || localStorage.getItem('configWeatherMetric') === null) localStorage.setItem('configWeatherMetric',"1"); // 1: metric, 0: imperial
   if(force || localStorage.getItem('configForecastEnabled') === null) localStorage.setItem('configForecastEnabled',"1"); 
   if(force || localStorage.getItem('configWeatherLocationEnabled') === null) localStorage.setItem('configWeatherLocationEnabled',"1"); 
-  if(force || localStorage.getItem('configInfoURL') === null) localStorage.setItem('configInfoURL',vars.BASE_SITE_URL + '/words.php'); // URL for downloading INFO text (json[0]), "": default, words from the configured NineTime server
-  if(force || localStorage.getItem('configInfoUsePos') === null) localStorage.setItem('configInfoUsePos',"1"); // send position to info url by POST JSON
+  if(force || localStorage.getItem('configInfoURL') === null) localStorage.setItem('configInfoURL',vars.BASE_SITE_URL + '/info-example.php'); // New installations only; existing script URLs are kept.
+  if(force || localStorage.getItem('configInfoUsePos') === null) localStorage.setItem('configInfoUsePos',"0"); // send position only when enabled
   if(force || localStorage.getItem('configInfoData') === null) localStorage.setItem('configInfoData',""); // send some data (eg,token) to info url by POST JSON (future use)
   if(force || localStorage.getItem('configInfoLanguage') === null) localStorage.setItem('configInfoLanguage',"en"); // language for info script
   
@@ -275,40 +275,21 @@ Pebble.addEventListener('webviewclosed', function(e) {
     Pebble.sendAppMessage(dict, function(){
 
 
-      // after sending config data, force a weather refresh in case that changed
-      
-      /*if(type == vars.PKIT_WEATHER || type == vars.PKIT_INFO || type == vars.PKIT_WEATHER_INFO){
-
+      // Every successful settings save refreshes weather, including old/cached configurators.
+      var type = vars.PKIT_WEATHER;
+      localStorage.setItem('weatherLastDownload', '0');
+      localStorage.setItem('locationLastDownload', '0');
+      var infoSelected = configData.configInfoEnabled !== 0 && configData.configInfoEnabled !== false && configData.configInfoEnabled !== '0';
+      if(localStorage.getItem('configInfoURL') && infoSelected){
+        type=vars.PKIT_WEATHER_INFO;
+      }
       localStorage.setItem('lastRequestType',type);
       localStorage.setItem('weatherDownloaded','0');
-      localStorage.setItem('infoDownloaded','0');
-      if(type == vars.PKIT_WEATHER) localStorage.setItem('infoDownloaded','1'); // need just weather, set info to already downloaded, will not send because of type=PKIT_WEATHER
-      if(type == vars.PKIT_INFO) localStorage.setItem('weatherDownloaded','1'); // need just info, set weather to already downloaded, will not send because of type=PKIT_INFO
-      if(localStorage.getItem('weatherDownloaded') == "0") weather.downloadWeather();
-      if(localStorage.getItem('infoDownloaded') == "0") info.downloadInfo();
-      //sendDataToPebble();
-      }*/
-      var type=0;
-      if(configData.fetchWeatherNow && configData.fetchWeatherNow > 0){
-        type = vars.PKIT_WEATHER;
-        localStorage.setItem('weatherLastDownload','0');
-        localStorage.setItem('locationLastDownload','0');
-      }
-      if(configData.fetchInfoNow && configData.fetchInfoNow > 0){
-        if(type) type=vars.PKIT_WEATHER_INFO;
-        else type=vars.PKIT_INFO;
-      }
-      if(type > 0){
-        localStorage.setItem('lastRequestType',type);
-        localStorage.setItem('weatherDownloaded','0');
-        localStorage.setItem('infoDownloaded','0');
-        if(type == vars.PKIT_WEATHER) localStorage.setItem('infoDownloaded','1'); // need just weather, set info to already downloaded, will not send because of type=PKIT_WEATHER
-        if(type == vars.PKIT_INFO) localStorage.setItem('weatherDownloaded','1'); // need just info, set weather to already downloaded, will not send because of type=PKIT_INFO
-        setTimeout(function(){
-          if(localStorage.getItem('weatherDownloaded') == "0") weather.downloadWeather();
-          if(localStorage.getItem('infoDownloaded') == "0") info.downloadInfo();
-        },300);
-      }
+      localStorage.setItem('infoDownloaded',type === vars.PKIT_WEATHER ? '1' : '0');
+      setTimeout(function(){
+        weather.downloadWeather(true);
+        if(localStorage.getItem('infoDownloaded') == '0') info.downloadInfo();
+      },300);
     }, function() {
 
     });

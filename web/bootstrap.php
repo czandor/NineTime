@@ -24,6 +24,7 @@ function ninetime_config($name, $fallback = null) {
             'NINETIME_DB_NAME' => array('db', 'database'),
             'NINETIME_WEATHER_USER_AGENT' => array('weather', 'user_agent'),
             'NINETIME_WEATHER_CACHE_DIR' => array('weather', 'cache_dir'),
+            'NINETIME_LOCATION_DIR' => array('weather', 'location_dir'),
             'NINETIME_ADMIN_TOKEN' => array('admin_token')
         );
         foreach ($environment as $variable => $keys) {
