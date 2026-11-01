@@ -111,7 +111,7 @@ async function main() {
     for (const script of preview.body.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) {
       if (script[1].trim()) new vm.Script(script[1]);
     }
-    check(preview.body.includes('var actualVersion="2.02"'), 'Version 2.02 renders as valid JavaScript.');
+    check(preview.body.includes('var actualVersion="2.03"'), 'Version 2.03 renders as valid JavaScript.');
     check(!preview.body.includes('weather-config-fetchnow'), 'Weather refresh checkbox removed.');
     console.log('Smoke tests passed: ' + assertions + ' assertions. No external service was contacted.');
   } finally {

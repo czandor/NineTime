@@ -12,7 +12,7 @@ return array(
         'database' => 'ninetime'
     ),
     'weather' => array(
-        'user_agent' => 'NineTime/2.02 (https://github.com/czandor/NineTime)',
+        'user_agent' => 'NineTime/2.03 (https://github.com/czandor/NineTime)',
         'cache_dir' => __DIR__ . '/../var/weather',
         'location_dir' => __DIR__ . '/../var/locations',
         'cache_seconds' => 900,

@@ -4,7 +4,7 @@ Pebble óraszámlap, telefonos JavaScript kísérőkóddal és PHP beállítóol
 A rendezett órás forrás alapja az **1.92-es verzió**; a webes rész az utólag letöltött
 `www` szervermentésből származik.
 
-A jelenlegi **2.02** új beállítófelületet, GPS-es városnevet és mentéskori automatikus időjárás/info-frissítést ad.
+A jelenlegi **2.03** új beállítófelületet, GPS-es városnevet és mentéskori automatikus időjárás/info-frissítést ad.
 A **2.00** cserélte az időjárás-szolgáltatókat és takarította a régi kulcskezelést.
 A Pebble Time 2-port a **3.xx** verzióhoz készül majd.
 

@@ -67,6 +67,8 @@ function getInfo(){
   pos              : (localStorage.getItem('configInfoUsePos') == '1')?localStorage.getItem('locationLastPosJSON'):''
 };
   var url=localStorage.getItem('configInfoURL');
+  url=url.replace(/^http:\/\/(?:www\.)?czandor\.hu\/pebble\/(words|info-example)\.php(?=$|[?#])/i,
+      'https://czandor.hu/pebble/$1.php');
    vars.xhrRequest(url, 'POST',
       function(responseText) {
         // responseText contains a JSON object with info

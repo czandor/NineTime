@@ -63,6 +63,13 @@ function initSettingsUI() {
         }
     });
     document.querySelectorAll('.settingsbox > br').forEach(function(br){br.remove();});
+    window.addEventListener('scroll', scheduleSettingsNavigation, {passive:true});
+    window.addEventListener('resize', scheduleSettingsNavigation);
+    if(typeof ResizeObserver !== 'undefined') {
+        var observer=new ResizeObserver(scheduleSettingsNavigation);
+        observer.observe(document.getElementById('div-header'));
+        observer.observe(document.getElementById('div-page'));
+    }
 }
 function updateSettingsUI() {
     [5,6,7].forEach(function(id) {
@@ -79,6 +86,29 @@ function updateSettingsUI() {
     document.querySelectorAll('.settingsboxnavigate button').forEach(function(button) {
         var icon=button.querySelector('img');
         button.disabled=icon.style.pointerEvents==='none';
+    });
+    scheduleSettingsNavigation();
+}
+var settingsNavigationPending=false;
+function scheduleSettingsNavigation() {
+    if(settingsNavigationPending)return;
+    settingsNavigationPending=true;
+    window.requestAnimationFrame(function(){settingsNavigationPending=false;updateSettingsNavigation();});
+}
+function updateSettingsNavigation() {
+    var header=document.getElementById('div-header'), active=null;
+    var edge=header.getBoundingClientRect().bottom+24;
+    document.body.style.setProperty('--settings-header-space',(header.offsetHeight+24)+'px');
+    var buttons=document.querySelectorAll('.settingsboxnavigate button[data-section]');
+    var atBottom=window.pageYOffset>0 && window.pageYOffset+window.innerHeight>=document.documentElement.scrollHeight-2;
+    buttons.forEach(function(button){
+        var section=document.getElementById(button.getAttribute('data-section'));
+        if(button.disabled || !section || !section.getClientRects().length)return;
+        if(active===null || section.getBoundingClientRect().top<=edge || atBottom)active=button;
+    });
+    buttons.forEach(function(button){
+        if(button===active)button.setAttribute('aria-current','location');
+        else button.removeAttribute('aria-current');
     });
 }
 function scrollToSettings(id) {

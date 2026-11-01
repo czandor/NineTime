@@ -152,7 +152,7 @@ saved=saveSettings();saved.calls.length=0;saved.handlers.webviewclosed({response
 check(saved.calls.length === 0, 'closing settings without saving does not refresh');
 
 const pkg = JSON.parse(read('watchface/package.json'));
-check(pkg.version === '2.2.0' && read('web/public/pebble/ninetime/version.txt').trim() === '2.02', 'version 2.02');
-check(/CONFIG_VERSION_MAJOR 2/.test(read('watchface/src/c/const.h')) && /CONFIG_VERSION_MINOR 2/.test(read('watchface/src/c/const.h')), 'watch configuration version');
+check(pkg.version === '2.3.0' && read('web/public/pebble/ninetime/version.txt').trim() === '2.03', 'version 2.03');
+check(/CONFIG_VERSION_MAJOR 2/.test(read('watchface/src/c/const.h')) && /CONFIG_VERSION_MINOR 3/.test(read('watchface/src/c/const.h')), 'watch configuration version');
 check(!pkg.pebble.targetPlatforms.includes('emery'), 'PBT2 remains a future 3.xx port');
 console.log('Weather JavaScript tests passed: ' + assertions + ' assertions; no external service contacted.');

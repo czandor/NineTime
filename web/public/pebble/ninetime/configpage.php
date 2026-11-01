@@ -109,7 +109,7 @@ if(!$watchtoken || !$platform || !$model || !$CONFIG_VERSION) die("Please start 
     <?php
     $navigationLabels=array('Face','Sidebar','Row','Extra rows','Alerts','Weather','Date','Info','Text','About');
     foreach($settingboxes as $key=>$box){ ?>
-        <button type="button" onclick="scrollToSettings('<?=$box[0]?>')"><img id="<?=$box[0]?>-scrollimg" src="images/<?=$box[1]?>.png" alt="" /><?=$navigationLabels[$key]?></button>
+        <button type="button" data-section="<?=$box[0]?>" onclick="scrollToSettings('<?=$box[0]?>')"><img id="<?=$box[0]?>-scrollimg" src="images/<?=$box[1]?>.png" alt="" /><?=$navigationLabels[$key]?></button>
     <?php } ?>
     </nav>
 </header>

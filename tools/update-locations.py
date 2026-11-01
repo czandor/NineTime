@@ -27,7 +27,7 @@ def main():
         archive = args.archive
         if archive is None:
             archive = Path(temporary) / 'cities500.zip'
-            request = urllib.request.Request(SOURCE, headers={'User-Agent': 'NineTime/2.02 (https://github.com/czandor/NineTime)'})
+            request = urllib.request.Request(SOURCE, headers={'User-Agent': 'NineTime/2.03 (https://github.com/czandor/NineTime)'})
             with urllib.request.urlopen(request, timeout=60) as response, archive.open('wb') as output:
                 while True:
                     block = response.read(1024 * 1024)

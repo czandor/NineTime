@@ -1,7 +1,7 @@
 var site = require('./site-config.json');
 var BASE_SITE_URL = site.baseUrl.replace(/\/+$/, '');
 var BASE_CONFIG_URL = BASE_SITE_URL + '/ninetime/configpage.php';
-var CONFIG_VERSION = 2.02; // Keep in sync with const.h and the configurator.
+var CONFIG_VERSION = 2.03; // Keep in sync with const.h and the configurator.
 
 var PKIT_CONFIG=           1;
 var PKIT_WEATHER=          2;
@@ -19,7 +19,7 @@ var xhrRequest = function (url, type, callback,postdata) {
   };
   xhr.open(type, url);
   if(postdata && type == 'POST') {
-    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.send(postdata);
   }
   else xhr.send();

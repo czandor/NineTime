@@ -1,14 +1,21 @@
 var infoRequest = 0;
 function infoExampleSettings() {
-    var url = NINETIME_BASE_URL + '/info-example.php';
+    var url = infoScriptURL(NINETIME_BASE_URL + '/info-example.php');
     return {url:url, urlOK:url, language:0, usePos:0, period:60, data:''};
+}
+function infoScriptURL(url) {
+    // Upgrade only built-in endpoints. A user's own script URL must stay intact.
+    return typeof url==='string' ? url.replace(/^http:\/\/(?:www\.)?czandor\.hu\/pebble\/(words|info-example)\.php(?=$|[?#])/i,
+        'https://czandor.hu/pebble/$1.php') : url;
 }
 function getInfoSettings() {
     // Keep the selected 1.92 record, including its confirmed URL and custom data.
     if (!Array.isArray(settings.info)) settings.info = [infoExampleSettings()];
     if (!settings.info[settings.infoType]) settings.infoType = 0;
     if (!settings.info[settings.infoType]) settings.info[settings.infoType] = infoExampleSettings();
-    return settings.info[settings.infoType];
+    var item=settings.info[settings.infoType];
+    item.url=infoScriptURL(item.url); item.urlOK=infoScriptURL(item.urlOK);
+    return item;
 }
 function restoreInfoExample() {
     settings.infoType = 0;
