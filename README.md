@@ -1,7 +1,7 @@
 # NineTime
 
 A highly customizable digital and analog watchface for Pebble, created by **Andor Czafik**.
-**NineTime 2.03** adds a wrapping section menu with scroll highlighting and fixes the language of legacy info scripts by upgrading built-in URLs to HTTPS.
+**NineTime 2.04** keeps mobile icon previews separate from the controls, includes a wrapping section menu with scroll highlighting, and preserves info script language over HTTPS.
 Version 2.02 introduced the redesigned configurator, GPS city names and automatic weather/info refresh on save.
 Version 2.00 replaced the old weather integrations with two services that need no API key:
 Open-Meteo and MET Norway. The source starts from **1.92, the original baseline** for the

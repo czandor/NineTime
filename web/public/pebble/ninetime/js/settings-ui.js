@@ -12,7 +12,14 @@ function settingsGroup(box, title, ids) {
 function initSettingsUI() {
     var sidebar=document.getElementById('verticalbox');
     settingsGroup(sidebar,'Placement',['vertical-position-0','vertical-status-pos-0']);
-    settingsGroup(sidebar,'Content',['vertical-icon-pos-0','vertical-icon-pos-1','vertical-icon-pos-2']);
+    var content=settingsGroup(sidebar,'Content',['vertical-icon-pos-0','vertical-icon-pos-1','vertical-icon-pos-2']);
+    var icons=content.querySelector('.verticons-box');
+    var preview=document.createElement('div'); preview.className='widget-preview';
+    preview.hidden=icons.style.display==='none';
+    var caption=document.createElement('p'); caption.className='field-hint';
+    caption.textContent='Preview of the selected sidebar content';
+    preview.appendChild(caption); preview.appendChild(icons); content.appendChild(preview);
+    content.querySelectorAll('.inputrow').forEach(function(row){row.style.paddingBottom='';});
     settingsGroup(sidebar,'Status & seconds',['vertical-status-icon-0','vertical-status-icon-info','vertical-show-seconds-0']);
     settingsGroup(sidebar,'Colour palette',['config-5-textcolor']);
     var horizontal=document.getElementById('horizontal1box');

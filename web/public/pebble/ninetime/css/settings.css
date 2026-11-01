@@ -54,7 +54,9 @@ body.ninetime-settings { --ink:#192d38; --muted:#61717a; --accent:#11685f; --lin
 .ninetime-settings .palette-preview { display:flex; align-items:center; gap:12px; width:100%; flex-shrink:0; padding:12px; border:0; border-bottom:3px solid; border-radius:7px; margin-bottom:7px; font:600 22px/1.4 monospace; }
 .ninetime-settings .palette-mark { padding:2px 8px; border-radius:3px; }
 .ninetime-settings .field-hint { margin:9px 0 0; }
-.ninetime-settings .verticons-box { bottom:0; }
+.ninetime-settings .widget-preview { display:flex; flex-direction:column; align-items:center; gap:12px; padding:14px; margin-top:12px; background:#f6f8f4; border:1px solid var(--line); border-radius:9px; }
+.ninetime-settings .widget-preview .field-hint { margin:0; text-align:center; }
+.ninetime-settings .widget-preview .verticons-box { position:relative; flex:none; float:none; top:auto; right:auto; bottom:auto; margin:0; border-color:#b5c4bc; border-radius:3px; }
 .ninetime-settings .vertical-status-icon { display:flex !important; gap:8px; align-items:center; }
 .ninetime-settings .vertical-status-icon img { float:none; margin:0 !important; border-radius:6px; min-width:32px; }
 .ninetime-settings .script-actions { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }

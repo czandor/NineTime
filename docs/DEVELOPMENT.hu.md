@@ -4,7 +4,7 @@ Pebble óraszámlap, telefonos JavaScript kísérőkóddal és PHP beállítóol
 A rendezett órás forrás alapja az **1.92-es verzió**; a webes rész az utólag letöltött
 `www` szervermentésből származik.
 
-A jelenlegi **2.03** új beállítófelületet, GPS-es városnevet és mentéskori automatikus időjárás/info-frissítést ad.
+A jelenlegi **2.04** új beállítófelületet, GPS-es városnevet és mentéskori automatikus időjárás/info-frissítést ad.
 A **2.00** cserélte az időjárás-szolgáltatókat és takarította a régi kulcskezelést.
 A Pebble Time 2-port a **3.xx** verzióhoz készül majd.
 
@@ -76,6 +76,15 @@ pebble build
 
 A célplatformok jelenleg az eredeti `aplite`, `basalt`, `chalk`, `diorite` platformok.
 A PBT2/Emery elrendezése a 3.xx verzió külön következő feladata.
+
+Minden kiadáshoz a lefordított PBW-t is publikálni kell, két helyre:
+
+- a weboldal állandó letöltési címére: `https://czandor.hu/pebble/NineTime.pbw`;
+- a megfelelő verziójú GitHub Release mellékleteként, például `NineTime-2.04.pbw` néven.
+
+A kiadás címkéje a forrás megfelelő commitjára mutasson. Mindkét letöltés SHA-256
+ellenőrző összege egyezzen a kiadott builddel. Csak a forrás vagy a settings
+feltöltése nem teljes kiadás.
 
 ## Helyi emulátor Windows alatt
 
