@@ -63,7 +63,8 @@ of 15 minutes. MET requests identify NineTime through its User-Agent and honor u
 The old provider integrations, key distribution, key rotation, developer-key workarounds,
 and weather usage database tables have been removed. **The old weather URLs remain available**:
 compatibility adapters translate the new data into the WU, OpenWeather, and Yahoo response
-formats expected by installed clients. They use MET Norway by default.
+formats expected by installed clients. OpenWeather-formatted requests use Open-Meteo;
+Yahoo/MetaWeather and WU-formatted requests use MET Norway by default.
 In the 2.00 companion, existing weather settings migrate to
 Open-Meteo with phone GPS; a fixed city can be selected again in the configurator.
 

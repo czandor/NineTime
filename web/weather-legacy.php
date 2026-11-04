@@ -105,7 +105,8 @@ function ninetime_weather_legacy_request($format, $query, $transport = null, $no
     $language = isset($query['lang']) && is_string($query['lang']) ? strtolower($query['lang']) : 'en';
     $languages = array('hu' => 'hu', 'hu-hu' => 'hu', 'dl' => 'de', 'de' => 'de', 'ge' => 'de', 'en' => 'en');
     $language = isset($languages[$language]) ? $languages[$language] : 'en';
-    $weather = ninetime_weather_request(array('provider' => ninetime_config('weather.legacy_provider', 'metno'),
+    $provider = ninetime_config('weather.legacy_providers.' . $format, ninetime_config('weather.legacy_provider', 'metno'));
+    $weather = ninetime_weather_request(array('provider' => $provider,
         'latitude' => $place['latitude'], 'longitude' => $place['longitude'], 'language' => $language), $transport, $now);
     $name = $place['name'] !== '' ? $place['name'] : (isset($weather['location']['name']) ? $weather['location']['name'] : 'Unknown location');
     $current = $weather['current'];

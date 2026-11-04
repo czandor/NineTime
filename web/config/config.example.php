@@ -17,6 +17,7 @@ return array(
         'location_dir' => __DIR__ . '/../var/locations',
         'cache_seconds' => 900,
         'legacy_provider' => 'metno',
+        'legacy_providers' => array('owm' => 'openmeteo', 'yahoo' => 'metno', 'yql' => 'metno'),
         // Coordinates for old provider-specific IDs, keyed as e.g. 'wu:pws:STATION'.
         'legacy_locations' => array()
     ),

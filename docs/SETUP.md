@@ -109,7 +109,9 @@ Az eredeti WU/OpenWeather/Yahoo válaszmezőket az új adatokból állítja elő
 A visszaadott előrejelzés a következő 24 órát összegzi; az OpenWeather listájának
 nyolc eleme ugyanennek az összegzésnek a régi kliens által elvárt csomagolása.
 
-A `weather.legacy_provider` alapértéke `metno`; `openmeteo` is választható.
+A `weather.legacy_providers` formátumonként választ szolgáltatót: az `owm` formátum
+alapértéke `openmeteo`, a `yahoo` és `yql` formátumé `metno`.
+A `weather.legacy_provider` a többi régi formátum alapértelmezése; értéke `metno`.
 A régi beállítóoldalt megnyitó 1.xx kliensnek nem küld ismeretlen szolgáltatónevet:
 megőrzi a telefon korábbi időjárás-beállításait, a szerver adatformátumot alakít.
 A szervercsere az azonos nyilvános URL-en történő telepítés után segít a régi klienseknek.

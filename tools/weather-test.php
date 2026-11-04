@@ -135,15 +135,17 @@ try {
     check_weather(count($places['locations']) === 2 && $places['locations'][0]['latitude'] === 47.4979, 'city search');
     check_weather($places['locations'][1]['latitude'] === 0.0, 'zero coordinates in search');
     $legacyCalls = array();
-    $legacyTransport = function ($url, $headers) use ($met, &$legacyCalls) {
+    $legacyTransport = function ($url, $headers) use ($met, $open, &$legacyCalls) {
         $legacyCalls[] = $url;
         if (strpos($url, '/v1/get?') !== false) $data = array('name' => 'Budapest', 'latitude' => 47.4979, 'longitude' => 19.0402);
         elseif (strpos($url, '/v1/search?') !== false) $data = array('results' => array(array('name' => 'Berlin', 'latitude' => 52.52, 'longitude' => 13.405)));
+        elseif (strpos($url, 'https://api.open-meteo.com/v1/forecast?') === 0) $data = $open;
         else $data = $met;
         return array('status' => 200, 'headers' => array(), 'body' => json_encode($data));
     };
     $owm = ninetime_weather_legacy_request('owm', array('url' => 'http://api.openweathermap.org/data/2.5/weather?lat=0&lon=0&units=metric&appid=ignored'), $legacyTransport, $now);
     check_weather($owm['cod'] === '200' && $owm['main']['temp'] === 12.0 && $owm['wind']['speed'] === 5.0, 'legacy OWM metric contract');
+    check_weather($owm['ninetime']['provider'] === 'openmeteo', 'OpenWeather-formatted endpoint uses Open-Meteo');
     check_weather($owm['weather'][0]['id'] === 800 && $owm['weather'][0]['icon'] === '01n', 'legacy OWM night');
     check_weather($owm['wind']['deg'] === 225.0 && isset($owm['sys']['sunrise'], $owm['sys']['sunset']), 'legacy OWM wind direction and solar timestamps');
     $owmImperial = ninetime_weather_legacy_request('owm', array('lat' => 0, 'lon' => 0, 'units' => 'imperial'), $legacyTransport, $now);
@@ -163,10 +165,12 @@ try {
     $yahoo = ninetime_weather_legacy_request('yahoo', array('lat' => 0, 'lon' => 0), $legacyTransport, $now);
     check_weather($yahoo['current_observation']['condition']['code'] === 31 && abs($yahoo['current_observation']['condition']['temperature'] - 53.6) < 0.001, 'legacy Yahoo current contract');
     check_weather($yahoo['forecasts'][0]['code'] === 4 && $yahoo['forecasts'][0]['low'] === 23.0, 'legacy Yahoo forecast contract');
+    check_weather($yahoo['ninetime']['provider'] === 'metno', 'MetaWeather and Yahoo-formatted endpoints use MET Norway');
     check_weather($yahoo['current_observation']['wind']['direction'] === 225.0 && isset($yahoo['current_observation']['astronomy']['sunrise']), 'Fitbit Yahoo wind direction and local sun time');
     $yqlUrl = 'https://query.yahooapis.com/v1/public/yql?q=' . rawurlencode('select * from weather.forecast where woeid in (select woeid from geo.places(1) where text="(0,0)") and u="c"');
     $yql = ninetime_weather_legacy_request(null, array('url' => $yqlUrl), $legacyTransport, $now);
     check_weather($yql['query']['count'] === 1 && $yql['query']['results']['channel']['item']['condition']['temp'] === 12.0, 'legacy Yahoo YQL contract');
+    check_weather($yql['ninetime']['provider'] === 'metno', 'legacy YQL endpoint uses MET Norway');
     $city = ninetime_weather_legacy_request('owm', array('id' => 3054643, 'units' => 'metric'), $legacyTransport, $now);
     check_weather($city['name'] === 'Budapest', 'legacy OWM GeoNames city ID');
     $city = ninetime_weather_legacy_request('wu', array('location' => 'Germany/Berlin'), $legacyTransport, $now);

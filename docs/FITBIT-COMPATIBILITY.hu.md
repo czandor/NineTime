@@ -10,6 +10,13 @@ információs szöveget/helyadatot kezeli; nem ez az időjárás-kiszolgáló.
 | Yahoo (NinePhoto) | `/pebble/weather_yahoo.php?lat=…&lon=…&source=fitbit` | Ugyanaz a kompatibilitási válasz |
 | OpenWeatherMap (`owm`) | Régi `/pebble/getapikey_owm.php`, majd közvetlenül `api.openweathermap.org` | A megszüntetett kulcskiosztó nem működik; ez a mód szerveroldalról nem tehető kulcsmentessé |
 
+A saját `/pebble/weather_owm.php` végpont Open-Meteo-adatokból állítja elő az
+OpenWeather-formátumú választ. A MetaWeather/Yahoo-formátumú saját végpontok MET Norway-t
+használnak. A két útvonalhoz külön új szolgáltató tartozik, változatlan kliensoldali
+válaszformátummal. Az archivált Fitbit OpenWeatherMap módjában a saját proxy címe
+ki van kommentelve: a kulcs lekérése után közvetlenül az OpenWeather szerverét hívja.
+A kulcskiosztó válaszából ezért nem lehet másik időjárás-szolgáltatóra átirányítani.
+
 A Programmer’s Watch ellenőrzött archív változata alapértelmezésben OpenWeatherMapet
 választ. Meglévő telepítésnél a **MetaWeather** mód kiválasztása használja az új közös
 szolgáltatót. Kulcsmentes OpenWeatherMap-helyettesítéshez külön Fitbit-kliensfrissítés
