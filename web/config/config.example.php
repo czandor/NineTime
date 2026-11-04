@@ -18,9 +18,13 @@ return array(
         'cache_seconds' => 900,
         'legacy_provider' => 'metno',
         'legacy_providers' => array('owm' => 'openmeteo', 'yahoo' => 'metno', 'yql' => 'metno'),
+        // Existing Fitbit clients fetch this key, then call OpenWeather directly.
+        // Keep the real value in config.local.php or NINETIME_LEGACY_OWM_KEY.
+        'legacy_openweather_key' => '',
         // Coordinates for old provider-specific IDs, keyed as e.g. 'wu:pws:STATION'.
         'legacy_locations' => array()
     ),
+    'legacy_key_endpoint_enabled' => false,
     // Empty means the administrative endpoints are inaccessible.
     'admin_token' => ''
 );

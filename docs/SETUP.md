@@ -93,11 +93,20 @@ előrejelzése egy kérésben érkeznek, metrikus vagy angolszász megjeleníté
 Az állapot szövege angol, magyar vagy német lehet. Hálózati hibánál a korábbi adatok
 megmaradnak. A Gadgetbridge a saját időjárás-beállításait használja.
 
-A régi szolgáltatók, a kulcskiosztás, kulcsváltogatás, fejlesztői kulcsot használó
+A régi szolgáltatók, az adatbázisos kulcskiosztás, kulcsváltogatás, fejlesztői kulcsot használó
 kerülőút és az időjárás-statisztika kikerült. A 2.00-s telefonos kód a régi beállításokból
 Open-Meteóra és telefonos GPS-re vált; a rögzített várost újra ki kell választani.
 A friss séma már nem hoz létre időjárás-táblákat. Meglévő adatbázis régi tábláit
 ez a forrásmódosítás nem törli automatikusan.
+
+A már telepített, közvetlen OpenWeather-hívást használó Fitbit-kliensekhez a
+`getapikey_owm.php` külön engedélyezhető. A privát `config.local.php` fájlban a
+`legacy_key_endpoint_enabled` legyen `true`, a kulcs pedig a `weather.legacy_openweather_key`
+mezőbe kerüljön. Környezeti változóval ugyanez a `NINETIME_LEGACY_KEY_ENDPOINT_ENABLED=true`
+és `NINETIME_LEGACY_OWM_KEY` beállítás. A válasz a régi `status: ok`, `use_allowed: 1`,
+`key` mezőket adja; letiltott állapotban 410, hiányzó kulcsnál 503 a HTTP-státusz.
+A kulcsnak az OpenWeather aktuális időjárás- és előrejelzés-végpontján is működnie kell.
+Az új NineTime-időjárás továbbra is kulcsmentes.
 
 ### Régi telepítések kiszolgálása
 

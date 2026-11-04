@@ -25,11 +25,14 @@ function ninetime_config($name, $fallback = null) {
             'NINETIME_WEATHER_USER_AGENT' => array('weather', 'user_agent'),
             'NINETIME_WEATHER_CACHE_DIR' => array('weather', 'cache_dir'),
             'NINETIME_LOCATION_DIR' => array('weather', 'location_dir'),
+            'NINETIME_LEGACY_OWM_KEY' => array('weather', 'legacy_openweather_key'),
+            'NINETIME_LEGACY_KEY_ENDPOINT_ENABLED' => array('legacy_key_endpoint_enabled'),
             'NINETIME_ADMIN_TOKEN' => array('admin_token')
         );
         foreach ($environment as $variable => $keys) {
             $value = getenv($variable);
             if ($value === false) continue;
+            if ($variable === 'NINETIME_LEGACY_KEY_ENDPOINT_ENABLED') $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
             if (count($keys) === 1) $settings[$keys[0]] = $value;
             else $settings[$keys[0]][$keys[1]] = $value;
         }

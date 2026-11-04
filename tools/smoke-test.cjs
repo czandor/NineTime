@@ -36,7 +36,7 @@ function request(port, pathname, method = 'GET') {
   });
 }
 async function main() {
-  for (const command of [[process.execPath, ['tools/weather-test.cjs']], [process.execPath, ['tools/info-test.cjs']], [process.env.PHP_BINARY || 'php', ['tools/weather-test.php']]]) {
+  for (const command of [[process.execPath, ['tools/weather-test.cjs']], [process.execPath, ['tools/info-test.cjs']], [process.execPath, ['tools/legacy-key-test.cjs']], [process.env.PHP_BINARY || 'php', ['tools/weather-test.php']]]) {
     const result = cp.spawnSync(command[0], command[1], { cwd: root, encoding: 'utf8', windowsHide: true });
     check(result.status === 0, 'Weather regression suite: ' + (result.stderr || result.stdout));
   }
@@ -97,7 +97,7 @@ async function main() {
     }
     check((await request(port, '/pebble/weather-chart.php')).status === 404, 'Weather statistics endpoint removed.');
     check((await request(port, '/pebble/colormatch.php')).status === 403, 'Color matching requires admin authentication.');
-    check((await request(port, '/pebble/getapikey_owm.php')).status === 410, 'Legacy key discovery remains disabled.');
+    check((await request(port, '/pebble/getapikey_owm.php')).status === 410, 'Legacy key discovery is disabled without explicit private configuration.');
     for (const endpoint of ['weather_owm.php', 'weather_wu.php', 'weather_yahoo.php', 'weather_czandor.php']) {
       check((await request(port, '/pebble/' + endpoint)).status === 400, 'Legacy weather URL exists and validates input: ' + endpoint);
     }

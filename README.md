@@ -60,8 +60,10 @@ samples. Saving settings refreshes weather and any active info script automatica
 
 Both services use a shared PHP endpoint and a private cache, with a minimum refresh interval
 of 15 minutes. MET requests identify NineTime through its User-Agent and honor upstream cache expiry.
-The old provider integrations, key distribution, key rotation, developer-key workarounds,
-and weather usage database tables have been removed. **The old weather URLs remain available**:
+The old provider integrations, key rotation, developer-key workarounds,
+and weather usage database tables have been removed. An optional legacy key endpoint supports
+installed Fitbit clients that still call OpenWeather directly; its key is configured privately.
+**The old weather URLs remain available**:
 compatibility adapters translate the new data into the WU, OpenWeather, and Yahoo response
 formats expected by installed clients. OpenWeather-formatted requests use Open-Meteo;
 Yahoo/MetaWeather and WU-formatted requests use MET Norway by default.

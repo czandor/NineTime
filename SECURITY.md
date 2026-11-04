@@ -33,8 +33,12 @@ A teljes munkamappát ne állítsd be webszerver-dokumentumgyökérként.
 A régi időjárás-végpontok kompatibilitási rétegként megmaradnak; az új szolgáltatók
 adatait alakítják a régi formátumra. A bemenetként kapott régi API-URL-eket nem
 kérik le, és az azokban lévő kulcsokat figyelmen kívül hagyják.
-A kulcsot visszaadó végpont kulcs nélkül, 410 státusszal válaszol; az időjárás-statisztika
-el lett távolítva (404). A színillesztő adminoldal alapértelmezésben 403 választ ad.
+A kulcsot visszaadó végpont alapértelmezésben kulcs nélkül, 410 státusszal válaszol.
+A régi Fitbit-kliensekhez a `legacy_key_endpoint_enabled` privát beállítás engedélyezheti:
+ekkor a `weather.legacy_openweather_key` értékét kiadja a kliensnek, a régi JSON-formátumban.
+Az érték kizárólag a privát konfigurációban vagy környezeti változóban szerepelhet;
+a válasz `Cache-Control: no-store` fejlécet kap. Nincs kulcsváltogatás vagy adatbázisos kulcskiosztás.
+Az időjárás-statisztika el lett távolítva (404). A színillesztő adminoldal alapértelmezésben 403 választ ad.
 Adminisztrátori hozzáféréshez a szerveroldali `admin_token` beállítás és a
 `Authorization: Bearer ...` kérésfejléc szükséges.
 
