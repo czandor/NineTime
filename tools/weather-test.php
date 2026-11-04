@@ -22,8 +22,8 @@ $now = 1700000000;
 mkdir($locationDirectory, 0700, true);
 file_put_contents($locationDirectory . '/metadata.json', json_encode(array('schema' => 1)));
 $locations = array(
-    array(47.4979, 19.0402, 'Budapest', 'HU', 3054643, 1700000),
-    array(0, 0, 'Equator town', 'ZZ', 1, 1000),
+    array(47.4979, 19.0402, 'Budapest', 'HU', 3054643, 1700000, 'Europe/Budapest'),
+    array(0, 0, 'Equator town', 'ZZ', 1, 1000, 'UTC'),
     array(-16.5, 179.9, 'Date line town', 'FJ', 2, 1000),
     array(89.9, 170, 'Polar town', 'ZZ', 3, 1000),
     array(49.99, 5.01, 'Across the tile edge', 'ZZ', 4, 1000),
@@ -33,7 +33,7 @@ $tiles = array();
 foreach ($locations as $place) $tiles[(int) floor(($place[0] + 90) / 5) . '_' . (int) floor(($place[1] + 180) / 5)][] = $place;
 foreach ($tiles as $tile => $places) file_put_contents($locationDirectory . '/' . $tile . '.json', json_encode($places));
 $open = array(
-    'current' => array('time' => $now, 'temperature_2m' => 12, 'relative_humidity_2m' => 70, 'wind_speed_10m' => 18, 'weather_code' => 0, 'is_day' => 0),
+    'current' => array('time' => $now, 'temperature_2m' => 12, 'relative_humidity_2m' => 70, 'wind_speed_10m' => 18, 'wind_direction_10m' => 225, 'weather_code' => 0, 'is_day' => 0),
     'hourly' => array('time' => array(), 'temperature_2m' => array(), 'weather_code' => array())
 );
 $met = array('properties' => array('timeseries' => array()));
@@ -45,13 +45,15 @@ for ($hour = 0; $hour <= 30; $hour++) {
     $met['properties']['timeseries'][] = array(
         'time' => gmdate('Y-m-d\TH:i:s\Z', $now + $hour * 3600),
         'data' => array(
-            'instant' => array('details' => array('air_temperature' => $hour > 24 ? 60 : $temperature, 'relative_humidity' => 70, 'wind_speed' => 5)),
+            'instant' => array('details' => array('air_temperature' => $hour > 24 ? 60 : $temperature, 'relative_humidity' => 70, 'wind_speed' => 5, 'wind_from_direction' => 225)),
             'next_1_hours' => array('summary' => array('symbol_code' => $hour === 8 ? 'heavyrainandthunder_day' : 'clearsky_night'))
         )
     );
 }
 try {
     check_weather(ninetime_location_nearest(47.498, 19.04)['name'] === 'Budapest', 'GPS city name');
+    check_weather(ninetime_location_nearest(47.498, 19.04)['timeZone'] === 'Europe/Budapest', 'offline time zone lookup');
+    check_weather(!isset(ninetime_location_nearest(-16.5, -179.95)['timeZone']), 'old six-field gazetteer tiles remain supported');
     check_weather(ninetime_location_nearest(0, 0)['name'] === 'Equator town', 'zero GPS coordinate lookup');
     check_weather(ninetime_location_nearest(-16.5, -179.95)['name'] === 'Date line town', 'nearest city across the date line');
     check_weather(ninetime_location_nearest(90, -10)['name'] === 'Polar town', 'nearest city at the pole');
@@ -61,6 +63,7 @@ try {
     foreach (array($a, $b) as $weather) {
         check_weather($weather['current']['temperatureC'] === 12.0, 'current temperature');
         check_weather($weather['current']['windKph'] === 18.0, 'wind units');
+        check_weather($weather['current']['windDegrees'] === 225.0, 'wind direction from upstream');
         check_weather($weather['current']['icon'] === 9, 'night icon');
         check_weather($weather['forecast']['minC'] === -5.0 && $weather['forecast']['maxC'] === 20.0, 'next 24 hours only');
         check_weather($weather['forecast']['icon'] === 10, 'thunderstorm priority');
@@ -72,6 +75,25 @@ try {
     check_weather(ninetime_weather_met_icon('sleetshowers_night') === 7, 'sleet');
     check_weather(ninetime_weather_condition(10, 'hu') === 'Zivatar', 'Hungarian condition text');
     check_weather(ninetime_weather_condition(10, 'xx') === 'Thunderstorm', 'language fallback');
+    $oldOpen = $open; unset($oldOpen['current']['wind_direction_10m']);
+    check_weather(ninetime_weather_openmeteo($oldOpen)['current']['windDegrees'] === null, 'old cached weather without wind direction remains usable');
+    check_weather(ninetime_weather_wind_direction(array('direction' => 'bad'), 'direction') === null, 'invalid optional wind direction is not invented');
+    foreach (array(array('Europe/Budapest', 47.4979, 19.0402), array('Pacific/Auckland', -41.2865, 174.7762),
+        array('Pacific/Kiritimati', 1.8721, -157.4278), array('America/New_York', 40.7128, -74.006)) as $place) {
+        $zone = new DateTimeZone($place[0]);
+        $date = new DateTimeImmutable('2026-11-04 12:00:00', $zone);
+        $solarWeather = array('location' => array('timeZone' => $place[0], 'latitude' => $place[1], 'longitude' => $place[2]));
+        $sun = ninetime_weather_legacy_sun($solarWeather, $date->getTimestamp());
+        check_weather(count($sun) === 2, 'sun events available: ' . $place[0]);
+        foreach ($sun as $event) {
+            $local = (new DateTimeImmutable('@' . $event['timestamp']))->setTimezone($zone);
+            check_weather($local->format('Y-m-d') === '2026-11-04', 'sun event belongs to local date: ' . $place[0]);
+            check_weather(preg_match('/^\d{1,2}:\d{2} (am|pm)$/', $event['text']) === 1, 'Fitbit-compatible local clock format');
+        }
+    }
+    $polar = array('location' => array('timeZone' => 'Arctic/Longyearbyen', 'latitude' => 78.2232, 'longitude' => 15.6469));
+    check_weather(ninetime_weather_legacy_sun($polar, strtotime('2026-06-21T12:00:00Z')) === array(), 'polar day does not fabricate sunrise or sunset');
+    check_weather(ninetime_weather_legacy_sun(array('location' => array()), $now) === array(), 'missing time zone does not guess local sun times');
     check_weather(ninetime_weather_coordinate('0', 90) === '0.0000', 'equator is valid');
     check_weather(ninetime_weather_coordinate('47.49791234', 90) === '47.4979', 'coordinate precision');
     rejects_weather(function () { ninetime_weather_coordinate('NaN', 90); }, 'invalid coordinate');
@@ -123,11 +145,13 @@ try {
     $owm = ninetime_weather_legacy_request('owm', array('url' => 'http://api.openweathermap.org/data/2.5/weather?lat=0&lon=0&units=metric&appid=ignored'), $legacyTransport, $now);
     check_weather($owm['cod'] === '200' && $owm['main']['temp'] === 12.0 && $owm['wind']['speed'] === 5.0, 'legacy OWM metric contract');
     check_weather($owm['weather'][0]['id'] === 800 && $owm['weather'][0]['icon'] === '01n', 'legacy OWM night');
+    check_weather($owm['wind']['deg'] === 225.0 && isset($owm['sys']['sunrise'], $owm['sys']['sunset']), 'legacy OWM wind direction and solar timestamps');
     $owmImperial = ninetime_weather_legacy_request('owm', array('lat' => 0, 'lon' => 0, 'units' => 'imperial'), $legacyTransport, $now);
     check_weather(abs($owmImperial['main']['temp'] - 53.6) < 0.001 && abs($owmImperial['wind']['speed'] - 11.1847) < 0.001, 'legacy OWM imperial contract');
     $owmForecast = ninetime_weather_legacy_request(null, array('url' => 'https://api.openweathermap.org/data/2.5/forecast?lat=0&lon=0&cnt=8&units=metric'), $legacyTransport, $now);
     check_weather(count($owmForecast['list']) === 8 && $owmForecast['list'][3]['weather'][0]['id'] === 200, 'legacy OWM list[3] forecast');
     check_weather($owmForecast['list'][0]['main']['temp_min'] === -5.0 && $owmForecast['list'][0]['main']['temp_max'] === 20.0, 'legacy OWM 24-hour range');
+    check_weather($owmForecast['list'][3]['weather'][0]['description'] === 'Thunderstorm', 'legacy forecast condition text');
     $wu = ninetime_weather_legacy_request('wu', array('url' => 'http://api.wunderground.com/api/ignored/conditions/lang:HU/q/0,0.json'), $legacyTransport, $now);
     check_weather($wu['current_observation']['display_location']['city'] === 'Equator town', 'legacy GPS response includes city name');
     check_weather($wu['response']['features']['conditions'] === 1 && $wu['current_observation']['relative_humidity'] === '70%', 'legacy WU current contract');
@@ -139,6 +163,7 @@ try {
     $yahoo = ninetime_weather_legacy_request('yahoo', array('lat' => 0, 'lon' => 0), $legacyTransport, $now);
     check_weather($yahoo['current_observation']['condition']['code'] === 31 && abs($yahoo['current_observation']['condition']['temperature'] - 53.6) < 0.001, 'legacy Yahoo current contract');
     check_weather($yahoo['forecasts'][0]['code'] === 4 && $yahoo['forecasts'][0]['low'] === 23.0, 'legacy Yahoo forecast contract');
+    check_weather($yahoo['current_observation']['wind']['direction'] === 225.0 && isset($yahoo['current_observation']['astronomy']['sunrise']), 'Fitbit Yahoo wind direction and local sun time');
     $yqlUrl = 'https://query.yahooapis.com/v1/public/yql?q=' . rawurlencode('select * from weather.forecast where woeid in (select woeid from geo.places(1) where text="(0,0)") and u="c"');
     $yql = ninetime_weather_legacy_request(null, array('url' => $yqlUrl), $legacyTransport, $now);
     check_weather($yql['query']['count'] === 1 && $yql['query']['results']['channel']['item']['condition']['temp'] === 12.0, 'legacy Yahoo YQL contract');

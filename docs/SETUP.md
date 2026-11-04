@@ -57,6 +57,10 @@ A PHP-folyamatnak olvasási jog kell hozzá. Más helyhez a `weather.location_di
 `NINETIME_LOCATION_DIR` adható meg. A forrás a GeoNames `cities500.zip`, CC BY 4.0;
 a letöltési cím, időpont és forrásellenőrző összeg a `metadata.json` fájlban szerepel.
 Frissítéshez új könyvtárba építs (`--destination`), majd váltsd át a konfigurációt.
+Az új index a GeoNames IANA-időzónáját is eltárolja (`metadata.json`: `timeZones: true`).
+Ez kell a régi Fitbit-kliensek helyi időben megadott napkelte/napnyugta mezőihez.
+A korábbi, időzóna nélküli index továbbra is használható városnév-feloldásra;
+ilyenkor a kiszolgáló nem találgatja a helyi napkelte/napnyugta idejét.
 A feloldás a legközelebbi lakott települést keresi; nem időjárás-állomást választ,
 az előrejelzés továbbra is a GPS-koordinátára készül. A GPS-pozíciót ehhez külön
 geokódoló szolgáltatásnak nem küldjük el. Hiányzó névadatbázis esetén az időjárás működik tovább.
@@ -66,6 +70,9 @@ Az 1.92-es info-beállításokat a beállítóoldal nem cseréli le: az URL, az 
 a GPS-választás, az időzítés és a régi Positive words végpont is megmarad.
 Új profilhoz az `info-example.php` ISO-hetet és éves napsorszámot mutat;
 a meglévő profilok csak a „Restore example” gombbal váltanak erre.
+
+A közös időjárás-kiszolgáló Fitbit-függőségeit és a támogatott régi módokat
+a [Fitbit-kompatibilitási leírás](FITBIT-COMPATIBILITY.hu.md) foglalja össze.
 
 Két szolgáltató választható: **Open-Meteo** és **MET Norway**. Egyikhez sem kell
 API-kulcs vagy fiók. Az Open-Meteo ingyenes végpontja személyes, nem üzleti használatra

@@ -85,6 +85,11 @@ function ninetime_weather_number($value, $min, $max) {
     return (float) $value;
 }
 
+function ninetime_weather_wind_direction($values, $key) {
+    if (!isset($values[$key]) || !is_numeric($values[$key]) || !is_finite((float) $values[$key]) || $values[$key] < 0 || $values[$key] > 360) return null;
+    return (float) $values[$key];
+}
+
 function ninetime_weather_wmo_icon($code, $night) {
     $code = (int) $code;
     if ($code === 0) return $night ? 9 : 6;
@@ -149,7 +154,8 @@ function ninetime_weather_openmeteo($json) {
         $hours = max($hours, ($time - $at) / 3600);
     }
     if ($hours < 18) throw new RuntimeException('Incomplete weather forecast.');
-    return array('current' => array('temperatureC' => $temperature, 'humidity' => $humidity, 'windKph' => $wind, 'icon' => $icon),
+    return array('current' => array('temperatureC' => $temperature, 'humidity' => $humidity, 'windKph' => $wind,
+        'windDegrees' => ninetime_weather_wind_direction($current, 'wind_direction_10m'), 'icon' => $icon),
         'forecast' => array('minC' => min($temperatures), 'maxC' => max($temperatures), 'icon' => ninetime_weather_forecast_icon($icons), 'hours' => 24));
 }
 
@@ -185,7 +191,8 @@ function ninetime_weather_metno($json, $now) {
         $hours = max($hours, ($time - $now) / 3600);
     }
     if ($hours < 18) throw new RuntimeException('Incomplete weather forecast.');
-    return array('current' => array('temperatureC' => $temperature, 'humidity' => $humidity, 'windKph' => $wind, 'icon' => $icon),
+    return array('current' => array('temperatureC' => $temperature, 'humidity' => $humidity, 'windKph' => $wind,
+        'windDegrees' => ninetime_weather_wind_direction($details, 'wind_from_direction'), 'icon' => $icon),
         'forecast' => array('minC' => min($temperatures), 'maxC' => max($temperatures), 'icon' => ninetime_weather_forecast_icon($icons), 'hours' => 24));
 }
 
@@ -217,7 +224,7 @@ function ninetime_weather_request($query, $transport = null, $now = null) {
     if ($provider === 'openmeteo') {
         $url = 'https://api.open-meteo.com/v1/forecast?' . http_build_query(array(
             'latitude' => $latitude, 'longitude' => $longitude,
-            'current' => 'temperature_2m,relative_humidity_2m,weather_code,is_day,wind_speed_10m',
+            'current' => 'temperature_2m,relative_humidity_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m',
             'hourly' => 'temperature_2m,weather_code', 'forecast_days' => 2,
             'timeformat' => 'unixtime', 'timezone' => 'UTC', 'wind_speed_unit' => 'kmh'
         ));

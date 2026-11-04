@@ -54,6 +54,28 @@ function ninetime_weather_legacy_place($query, $format, $transport, $now) {
     return $result['locations'][0];
 }
 
+function ninetime_weather_legacy_sun($weather, $now) {
+    // The old Fitbit client expects local clock times, not UTC or the server's time zone.
+    if (empty($weather['location']['timeZone'])) return array();
+    try { $zone = new DateTimeZone($weather['location']['timeZone']); }
+    catch (Exception $error) { return array(); }
+    $local = (new DateTimeImmutable('@' . $now))->setTimezone($zone);
+    $date = $local->format('Y-m-d');
+    $noon = $local->setTime(12, 0)->getTimestamp();
+    $events = array();
+    // Solar days and civil time zones can straddle the date line. Select events
+    // by their local date rather than assuming that the UTC date is the same.
+    foreach (array(-86400, 0, 86400) as $offset) {
+        $sun = date_sun_info($noon + $offset, $weather['location']['latitude'], $weather['location']['longitude']);
+        foreach (array('sunrise', 'sunset') as $event) {
+            if (!isset($sun[$event]) || !is_int($sun[$event])) continue; // Polar day/night has no event.
+            $time = (new DateTimeImmutable('@' . $sun[$event]))->setTimezone($zone);
+            if ($time->format('Y-m-d') === $date) $events[$event] = array('timestamp' => $sun[$event], 'text' => $time->format('g:i a'));
+        }
+    }
+    return $events;
+}
+
 function ninetime_weather_legacy_request($format, $query, $transport = null, $now = null) {
     if ($now === null) $now = time();
     $path = '';
@@ -88,6 +110,8 @@ function ninetime_weather_legacy_request($format, $query, $transport = null, $no
     $name = $place['name'] !== '' ? $place['name'] : (isset($weather['location']['name']) ? $weather['location']['name'] : 'Unknown location');
     $current = $weather['current'];
     $forecast = $weather['forecast'];
+    $direction = isset($current['windDegrees']) ? $current['windDegrees'] : -1;
+    $sun = ninetime_weather_legacy_sun($weather, $now);
     $temperature = function ($celsius, $units) { return $units === 'metric' ? $celsius : ($units === 'standard' ? $celsius + 273.15 : $celsius * 1.8 + 32); };
     $units = isset($query['units']) && is_string($query['units']) ? $query['units'] : ($format === 'owm' ? 'standard' : 'imperial');
     $meta = array('provider' => $weather['provider'], 'attribution' => $weather['attribution'], 'forecast_hours' => 24);
@@ -97,15 +121,18 @@ function ninetime_weather_legacy_request($format, $query, $transport = null, $no
         $result = array('cod' => '200', 'name' => $name, 'dt' => $weather['fetchedAt'],
             'coord' => array('lat' => (float) $place['latitude'], 'lon' => (float) $place['longitude']),
             'main' => array('temp' => $temperature($current['temperatureC'], $units), 'humidity' => $current['humidity']),
-            'wind' => array('speed' => $units === 'imperial' ? $current['windKph'] / 1.609344 : $current['windKph'] / 3.6),
+            'wind' => array('speed' => $units === 'imperial' ? $current['windKph'] / 1.609344 : $current['windKph'] / 3.6, 'deg' => $direction),
             'weather' => array(array('id' => $codes[$current['icon']], 'description' => $weather['condition'], 'icon' => $icon($current['icon']))), 'ninetime' => $meta);
+        $result['sys'] = array();
+        foreach ($sun as $event => $time) $result['sys'][$event] = $time['timestamp'];
         if (strpos($path, '/forecast') !== false || isset($query['cnt'])) {
             // The old client reads list[3] and merges min/max. These slots share the
             // next-24-hour summary, rather than pretending to be separate daily forecasts.
             $result['list'] = array();
             for ($i = 0; $i < 8; $i++) $result['list'][] = array('dt' => $now + $i * 10800,
                 'main' => array('temp_min' => $temperature($forecast['minC'], $units), 'temp_max' => $temperature($forecast['maxC'], $units)),
-                'weather' => array(array('id' => $codes[$forecast['icon']], 'icon' => $icon($forecast['icon']))));
+                'weather' => array(array('id' => $codes[$forecast['icon']], 'icon' => $icon($forecast['icon']),
+                    'description' => ninetime_weather_condition($forecast['icon'], $language))));
             $result['cnt'] = 8;
             $result['city'] = array('name' => $name);
         }
@@ -117,7 +144,7 @@ function ninetime_weather_legacy_request($format, $query, $transport = null, $no
         return array('response' => array('features' => array('conditions' => 1, 'forecast' => 1)),
             'current_observation' => array('temp_c' => $current['temperatureC'], 'temp_f' => $temperature($current['temperatureC'], 'imperial'),
                 'wind_kph' => $current['windKph'], 'wind_mph' => $current['windKph'] / 1.609344,
-                'relative_humidity' => round($current['humidity']) . '%', 'display_location' => array('city' => $name),
+                'relative_humidity' => round($current['humidity']) . '%', 'wind_degrees' => $direction, 'display_location' => array('city' => $name),
                 'icon' => $icons[$current['icon']], 'icon_url' => in_array($current['icon'], array(8,9), true) ? 'nt_' . $icons[$current['icon']] : $icons[$current['icon']], 'weather' => $weather['condition']),
             'forecast' => array('simpleforecast' => array('forecastday' => array(array('icon' => $icons[$forecast['icon']], 'low' => $degrees($forecast['minC']), 'high' => $degrees($forecast['maxC']))))), 'ninetime' => $meta);
     }
@@ -126,14 +153,20 @@ function ninetime_weather_legacy_request($format, $query, $transport = null, $no
         'high' => $temperature($forecast['maxC'], $units), 'text' => ninetime_weather_condition($forecast['icon'], $language), 'code' => $codes[$forecast['icon']]);
     $condition = array('text' => $weather['condition'], 'code' => $codes[$current['icon']], 'temperature' => $temperature($current['temperatureC'], $units));
     $location = array('city' => $name, 'lat' => (float) $place['latitude'], 'long' => (float) $place['longitude']);
-    $wind = array('speed' => $units === 'metric' ? $current['windKph'] : $current['windKph'] / 1.609344);
+    $wind = array('speed' => $units === 'metric' ? $current['windKph'] : $current['windKph'] / 1.609344, 'direction' => $direction);
+    $astronomy = array();
+    foreach ($sun as $event => $time) $astronomy[$event] = $time['text'];
     if ($format === 'yql') {
         $condition['temp'] = $condition['temperature'];
-        return array('query' => array('count' => 1, 'results' => array('channel' => array('location' => $location, 'wind' => $wind,
-            'atmosphere' => array('humidity' => $current['humidity']), 'item' => array('condition' => $condition, 'forecast' => array($forecastRecord))))), 'ninetime' => $meta);
+        $channel = array('location' => $location, 'wind' => $wind,
+            'atmosphere' => array('humidity' => $current['humidity']), 'item' => array('condition' => $condition, 'forecast' => array($forecastRecord)));
+        if (count($astronomy) === 2) $channel['astronomy'] = $astronomy;
+        return array('query' => array('count' => 1, 'results' => array('channel' => $channel)), 'ninetime' => $meta);
     }
-    return array('location' => $location, 'current_observation' => array('condition' => $condition, 'wind' => $wind,
-        'atmosphere' => array('humidity' => $current['humidity']), 'pubDate' => $weather['fetchedAt']), 'forecasts' => array($forecastRecord), 'ninetime' => $meta);
+    $observation = array('condition' => $condition, 'wind' => $wind,
+        'atmosphere' => array('humidity' => $current['humidity']), 'pubDate' => $weather['fetchedAt']);
+    if (count($astronomy) === 2) $observation['astronomy'] = $astronomy;
+    return array('location' => $location, 'current_observation' => $observation, 'forecasts' => array($forecastRecord), 'ninetime' => $meta);
 }
 
 function ninetime_weather_legacy_serve($format) {

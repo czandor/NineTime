@@ -45,7 +45,7 @@ def main():
                     raise ValueError('Invalid GeoNames coordinate')
                 row = min(35, max(0, math.floor((latitude + 90) / 5)))
                 column = min(71, max(0, math.floor((longitude + 180) / 5)))
-                tiles.setdefault(f'{row}_{column}', []).append([latitude, longitude, fields[1], fields[8], int(fields[0]), int(fields[14])])
+                tiles.setdefault(f'{row}_{column}', []).append([latitude, longitude, fields[1], fields[8], int(fields[0]), int(fields[14]), fields[17]])
         count = sum(map(len, tiles.values()))
         if count < 10000:
             raise ValueError('GeoNames archive is unexpectedly small')
@@ -53,7 +53,7 @@ def main():
         staging.mkdir(mode=0o755)
         for tile, places in tiles.items():
             (staging / f'{tile}.json').write_text(json.dumps(places, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
-        metadata = dict(schema=1, source=SOURCE, license='CC BY 4.0', attribution='GeoNames',
+        metadata = dict(schema=1, timeZones=True, source=SOURCE, license='CC BY 4.0', attribution='GeoNames',
                         downloadedAt=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                         sourceSha256=hashlib.sha256(archive.read_bytes()).hexdigest(), places=count, tiles=len(tiles))
         (staging / 'metadata.json').write_text(json.dumps(metadata, indent=2), encoding='utf-8')

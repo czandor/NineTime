@@ -58,6 +58,8 @@ function ninetime_location_nearest($latitude, $longitude) {
         if ($best !== null && $distance <= $radius) break;
     }
     if ($best === null) return null;
-    return array('name' => $best[2], 'country' => $best[3], 'geonameId' => $best[4],
+    $result = array('name' => $best[2], 'country' => $best[3], 'geonameId' => $best[4],
         'cityLatitude' => $best[0], 'cityLongitude' => $best[1], 'distanceKm' => round($distance, 2), 'source' => 'GeoNames');
+    if (isset($best[6]) && is_string($best[6]) && $best[6] !== '') $result['timeZone'] = $best[6];
+    return $result;
 }
