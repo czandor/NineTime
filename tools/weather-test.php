@@ -2,6 +2,7 @@
 // Deterministic adapter/cache tests. No network requests or production configuration.
 putenv('NINETIME_CONFIG_FILE=' . __DIR__ . '/../web/config/config.example.php');
 $cacheDirectory = __DIR__ . '/../web/var/weather-tests-' . getmypid();
+$cleanupDirectory = $cacheDirectory . '-cleanup';
 putenv('NINETIME_WEATHER_CACHE_DIR=' . $cacheDirectory);
 $locationDirectory = __DIR__ . '/../web/var/location-tests-' . getmypid();
 putenv('NINETIME_LOCATION_DIR=' . $locationDirectory);
@@ -125,6 +126,68 @@ try {
     check_weather(strpos($seen[0][0], 'latitude=47.4979') !== false, 'rounded upstream coordinate');
     check_weather(strpos($seen[0][0], 'apikey') === false && strpos($seen[0][0], 'APPID') === false, 'no authentication query');
 
+    mkdir($cleanupDirectory, 0700, true);
+    $cleanupNow = time();
+    $cutoff = $cleanupNow - 30 * 86400;
+    $cleanupPaths = array();
+    foreach (array('old' => $cutoff - 1, 'boundary' => $cutoff, 'fresh' => $cleanupNow,
+        'active' => $cutoff - 1, 'orphan' => $cutoff - 1, 'fresh-orphan' => $cleanupNow) as $name => $modified) {
+        $path = $cleanupDirectory . '/' . hash('sha256', $name) . '.json';
+        $cleanupPaths[$name] = $path;
+        file_put_contents($path, '{}');
+        file_put_contents($path . '.lock', '');
+        touch($path, $modified);
+        touch($path . '.lock', $modified);
+    }
+    unlink($cleanupPaths['orphan']);
+    unlink($cleanupPaths['fresh-orphan']);
+    touch($cleanupPaths['fresh'] . '.lock', $cutoff - 1);
+    file_put_contents($cleanupDirectory . '/keep.json', '{}');
+    touch($cleanupDirectory . '/keep.json', $cutoff - 1);
+    $activeLock = fopen($cleanupPaths['active'] . '.lock', 'c');
+    flock($activeLock, LOCK_EX);
+    try {
+        ninetime_weather_cache_cleanup($cleanupDirectory, $cleanupNow);
+        check_weather(!file_exists($cleanupPaths['old']) && !file_exists($cleanupPaths['old'] . '.lock'), 'cleanup removes old JSON and entry lock');
+        check_weather(file_exists($cleanupPaths['boundary']), 'cleanup keeps exactly 30-day-old entries');
+        check_weather(file_exists($cleanupPaths['fresh']) && file_exists($cleanupPaths['fresh'] . '.lock'), 'old lock does not expire refreshed JSON');
+        check_weather(file_exists($cleanupPaths['active']) && file_exists($cleanupPaths['active'] . '.lock'), 'cleanup skips active entry without waiting');
+        check_weather(!file_exists($cleanupPaths['orphan'] . '.lock'), 'cleanup removes old orphan locks');
+        check_weather(file_exists($cleanupPaths['fresh-orphan'] . '.lock'), 'cleanup keeps fresh orphan locks');
+        check_weather(file_exists($cleanupDirectory . '/keep.json'), 'cleanup only deletes hashed cache filenames');
+    } finally {
+        flock($activeLock, LOCK_UN);
+        fclose($activeLock);
+    }
+    $cleanupGuard = fopen($cleanupDirectory . '/.cleanup.lock', 'c');
+    try {
+        flock($cleanupGuard, LOCK_SH);
+        ninetime_weather_cache_cleanup($cleanupDirectory, $cleanupNow);
+        check_weather(file_exists($cleanupPaths['active']), 'pending entry acquisition prevents lock deletion');
+        flock($cleanupGuard, LOCK_EX);
+        ninetime_weather_cache_cleanup($cleanupDirectory, $cleanupNow);
+        check_weather(file_exists($cleanupPaths['active']), 'another cleanup cannot run in parallel');
+    } finally {
+        flock($cleanupGuard, LOCK_UN);
+        fclose($cleanupGuard);
+    }
+    ninetime_weather_cache_cleanup($cleanupDirectory, $cleanupNow);
+    check_weather(!file_exists($cleanupPaths['active']) && !file_exists($cleanupPaths['active'] . '.lock'), 'released stale entry is removed on next cleanup');
+
+    // Force the random branch once, including the normal cache-hit entry point.
+    for ($seed = 0; ; $seed++) {
+        mt_srand($seed);
+        if (rand(0, 999) === 0) break;
+    }
+    $expiredPath = $cacheDirectory . '/' . hash('sha256', 'expired-cleanup-fixture') . '.json';
+    file_put_contents($expiredPath, '{}');
+    touch($expiredPath, $now + 1901 - 30 * 86400 - 1);
+    mt_srand($seed);
+    $cachedAgain = ninetime_weather_request($query, $transport, $now + 1901);
+    check_weather(!file_exists($expiredPath) && !file_exists($expiredPath . '.lock'), 'request randomly cleans old JSON even without an entry lock');
+    check_weather($requests === 2 && $cachedAgain['current']['temperatureC'] === 12.0, 'cleanup preserves cache hits without upstream requests');
+    mt_srand();
+
     $geocode = function ($url, $headers) {
         return array('status' => 200, 'headers' => array(), 'body' => json_encode(array('results' => array(
             array('name' => 'Budapest', 'admin1' => 'Budapest', 'country' => 'Hungary', 'latitude' => 47.49791234, 'longitude' => 19.0402),
@@ -187,9 +250,10 @@ try {
     echo 'Weather PHP tests passed: ' . $checks . " assertions; no external service contacted.\n";
 } finally {
     // Delete only generated files in this test's own cache directory.
-    foreach (array($cacheDirectory, $locationDirectory) as $directory) {
+    foreach (array($cacheDirectory, $locationDirectory, $cleanupDirectory) as $directory) {
         if (!is_dir($directory)) continue;
         foreach (glob($directory . '/*') as $file) if (is_file($file)) unlink($file);
+        if (is_file($directory . '/.cleanup.lock')) unlink($directory . '/.cleanup.lock');
         rmdir($directory);
     }
 }

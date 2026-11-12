@@ -87,6 +87,12 @@ A szerver csak a két szolgáltató és a városkereső rögzített HTTPS-címei
 legalább 15 perces gyorsítótárral. A MET `Expires` és `Last-Modified` fejléceit
 figyelembe veszi; a koordinátákat négy tizedesre kerekíti.
 
+A cache-lekérések `rand(0, 999) === 0` esetén takarítást indítanak. Ez a 30 napja
+nem frissült JSON-okat és a hozzájuk tartozó zárolási fájlokat törli; a JSON nélküli,
+30 napnál régebbi zárolási fájlokat is eltávolítja. Az éppen használt bejegyzéseket
+kihagyja. A `.cleanup.lock` a párhuzamos takarítást és a zárolási fájlok törlését
+hangolja össze. A takarítás a lekérések részeként fut, külön időzítés nem szükséges.
+
 A telefon GPS-t használ, vagy a beállítóoldalon kiválasztott város koordinátáit.
 A városkereső Open-Meteo / GeoNames alapú. A jelenlegi adatok és a következő 24 óra
 előrejelzése egy kérésben érkeznek, metrikus vagy angolszász megjelenítéssel.

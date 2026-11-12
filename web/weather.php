@@ -37,6 +37,46 @@ function ninetime_weather_http($url, $headers) {
     return array('status' => $status, 'headers' => $responseHeaders, 'body' => $body);
 }
 
+function ninetime_weather_cache_modified($path) {
+    clearstatcache(true, $path);
+    clearstatcache(true, $path . '.lock');
+    $modified = @filemtime($path);
+    return $modified === false ? @filemtime($path . '.lock') : $modified;
+}
+
+function ninetime_weather_cache_cleanup($directory, $now) {
+    $guard = @fopen($directory . '/.cleanup.lock', 'c');
+    if (!$guard) return;
+    try {
+        // Requests hold a shared guard while opening and acquiring their entry lock.
+        // Exclusive access prevents waiters from keeping an unlinked lock file open.
+        if (!flock($guard, LOCK_EX | LOCK_NB)) return;
+        $cutoff = $now - 30 * 86400;
+        foreach (glob($directory . '/*.json*', GLOB_NOSORT) ?: array() as $file) {
+            if (!preg_match('/^[a-f0-9]{64}\.json(?:\.lock)?$/D', basename($file))) continue;
+            $path = substr($file, -5) === '.lock' ? substr($file, 0, -5) : $file;
+            $modified = ninetime_weather_cache_modified($path);
+            if ($modified === false || $modified >= $cutoff) continue;
+            $lock = @fopen($path . '.lock', 'c');
+            if (!$lock) continue;
+            try {
+                // A request may still be fetching upstream data after releasing its guard.
+                if (!flock($lock, LOCK_EX | LOCK_NB)) continue;
+                $modified = ninetime_weather_cache_modified($path);
+                if ($modified === false || $modified >= $cutoff) continue;
+                if (is_file($path) && !@unlink($path)) continue;
+                @unlink($path . '.lock');
+            } finally {
+                flock($lock, LOCK_UN);
+                fclose($lock);
+            }
+        }
+    } finally {
+        flock($guard, LOCK_UN);
+        fclose($guard);
+    }
+}
+
 function ninetime_weather_cached_json($url, $transport = null, $now = null, $validate = null) {
     if ($now === null) $now = time();
     if ($transport === null) $transport = 'ninetime_weather_http';
@@ -44,9 +84,22 @@ function ninetime_weather_cached_json($url, $transport = null, $now = null, $val
     if (!is_dir($directory) && !@mkdir($directory, 0700, true) && !is_dir($directory)) {
         throw new RuntimeException('Weather cache directory is not writable.');
     }
+    if (rand(0, 999) === 0) ninetime_weather_cache_cleanup($directory, $now);
     $path = $directory . '/' . hash('sha256', $url) . '.json';
-    $lock = @fopen($path . '.lock', 'c');
-    if (!$lock || !flock($lock, LOCK_EX)) throw new RuntimeException('Weather cache unavailable.');
+    $guard = @fopen($directory . '/.cleanup.lock', 'c');
+    if (!$guard) throw new RuntimeException('Weather cache unavailable.');
+    try {
+        if (!flock($guard, LOCK_SH)) throw new RuntimeException('Weather cache unavailable.');
+        $lock = @fopen($path . '.lock', 'c');
+        if (!$lock) throw new RuntimeException('Weather cache unavailable.');
+        if (!flock($lock, LOCK_EX)) {
+            fclose($lock);
+            throw new RuntimeException('Weather cache unavailable.');
+        }
+    } finally {
+        flock($guard, LOCK_UN);
+        fclose($guard);
+    }
     try {
         $cached = is_file($path) ? json_decode(file_get_contents($path), true) : null;
         if (is_array($cached) && isset($cached['data']) && $validate !== null) {
