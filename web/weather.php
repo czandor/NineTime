@@ -37,72 +37,47 @@ function ninetime_weather_http($url, $headers) {
     return array('status' => $status, 'headers' => $responseHeaders, 'body' => $body);
 }
 
-function ninetime_weather_cache_modified($path) {
-    clearstatcache(true, $path);
-    clearstatcache(true, $path . '.lock');
-    $modified = @filemtime($path);
-    return $modified === false ? @filemtime($path . '.lock') : $modified;
+function ninetime_weather_cache_store($db, $key, $cached, $updatedAt) {
+    $payload = json_encode($cached);
+    if ($payload === false) throw new RuntimeException('Invalid weather service response.');
+    $statement = mysqli_prepare($db, 'INSERT INTO weather_cache (cache_key, payload, updated_at) VALUES (?, ?, ?)
+        ON DUPLICATE KEY UPDATE payload = VALUES(payload), updated_at = VALUES(updated_at)');
+    if (!$statement) throw new RuntimeException('Weather cache is not writable.');
+    try {
+        mysqli_stmt_bind_param($statement, 'ssi', $key, $payload, $updatedAt);
+        if (!mysqli_stmt_execute($statement)) throw new RuntimeException('Weather cache is not writable.');
+    } finally {
+        mysqli_stmt_close($statement);
+    }
 }
 
-function ninetime_weather_cache_cleanup($directory, $now) {
-    $guard = @fopen($directory . '/.cleanup.lock', 'c');
-    if (!$guard) return;
-    try {
-        // Requests hold a shared guard while opening and acquiring their entry lock.
-        // Exclusive access prevents waiters from keeping an unlinked lock file open.
-        if (!flock($guard, LOCK_EX | LOCK_NB)) return;
-        $cutoff = $now - 30 * 86400;
-        foreach (glob($directory . '/*.json*', GLOB_NOSORT) ?: array() as $file) {
-            if (!preg_match('/^[a-f0-9]{64}\.json(?:\.lock)?$/D', basename($file))) continue;
-            $path = substr($file, -5) === '.lock' ? substr($file, 0, -5) : $file;
-            $modified = ninetime_weather_cache_modified($path);
-            if ($modified === false || $modified >= $cutoff) continue;
-            $lock = @fopen($path . '.lock', 'c');
-            if (!$lock) continue;
-            try {
-                // A request may still be fetching upstream data after releasing its guard.
-                if (!flock($lock, LOCK_EX | LOCK_NB)) continue;
-                $modified = ninetime_weather_cache_modified($path);
-                if ($modified === false || $modified >= $cutoff) continue;
-                if (is_file($path) && !@unlink($path)) continue;
-                @unlink($path . '.lock');
-            } finally {
-                flock($lock, LOCK_UN);
-                fclose($lock);
-            }
-        }
-    } finally {
-        flock($guard, LOCK_UN);
-        fclose($guard);
-    }
+function ninetime_weather_cache_cleanup($db, $now) {
+    $cutoff = max(0, (int) $now - 30 * 86400);
+    // InnoDB rechecks the indexed timestamp before deleting a concurrently updated row.
+    // A request already refreshing a deleted entry recreates it with its atomic upsert.
+    @mysqli_query($db, 'DELETE FROM weather_cache WHERE updated_at < ' . $cutoff);
 }
 
 function ninetime_weather_cached_json($url, $transport = null, $now = null, $validate = null) {
     if ($now === null) $now = time();
     if ($transport === null) $transport = 'ninetime_weather_http';
-    $directory = ninetime_config('weather.cache_dir');
-    if (!is_dir($directory) && !@mkdir($directory, 0700, true) && !is_dir($directory)) {
-        throw new RuntimeException('Weather cache directory is not writable.');
-    }
-    if (rand(0, 999) === 0) ninetime_weather_cache_cleanup($directory, $now);
-    $path = $directory . '/' . hash('sha256', $url) . '.json';
-    $guard = @fopen($directory . '/.cleanup.lock', 'c');
-    if (!$guard) throw new RuntimeException('Weather cache unavailable.');
+    $db = ninetime_db(false);
+    if (!$db) throw new RuntimeException('Weather cache database unavailable.');
     try {
-        if (!flock($guard, LOCK_SH)) throw new RuntimeException('Weather cache unavailable.');
-        $lock = @fopen($path . '.lock', 'c');
-        if (!$lock) throw new RuntimeException('Weather cache unavailable.');
-        if (!flock($lock, LOCK_EX)) {
-            fclose($lock);
-            throw new RuntimeException('Weather cache unavailable.');
-        }
-    } finally {
-        flock($guard, LOCK_UN);
-        fclose($guard);
-    }
-    try {
-        $cached = is_file($path) ? json_decode(file_get_contents($path), true) : null;
-        if (is_array($cached) && isset($cached['data']) && $validate !== null) {
+        if (rand(0, 999) === 0) ninetime_weather_cache_cleanup($db, $now);
+        $key = hash('sha256', $url);
+        $lockName = hash('sha256', 'ninetime-weather:' . ninetime_config('db.database') . ':' . $key);
+        $lock = mysqli_query($db, "SELECT GET_LOCK('" . $lockName . "', 20)");
+        if (!$lock || (string) mysqli_fetch_row($lock)[0] !== '1') throw new RuntimeException('Weather cache busy. Try again shortly.');
+        mysqli_free_result($lock);
+        // The key is generated locally as hexadecimal, never interpolated from user input.
+        $result = mysqli_query($db, "SELECT payload FROM weather_cache WHERE cache_key = '" . $key . "'");
+        if (!$result) throw new RuntimeException('Weather cache unavailable.');
+        $row = mysqli_fetch_assoc($result);
+        mysqli_free_result($result);
+        $cached = $row ? json_decode($row['payload'], true) : null;
+        if (!is_array($cached) || !isset($cached['data'], $cached['expires'], $cached['fetchedAt'])) $cached = null;
+        if ($cached !== null && $validate !== null) {
             try { call_user_func($validate, $cached['data']); }
             catch (RuntimeException $error) { $cached = null; }
         }
@@ -125,11 +100,11 @@ function ninetime_weather_cached_json($url, $transport = null, $now = null, $val
             $cached = array('data' => $data, 'fetchedAt' => $now, 'expires' => $expires);
             if (isset($response['headers']['last-modified'])) $cached['lastModified'] = $response['headers']['last-modified'];
         }
-        if (file_put_contents($path, json_encode($cached), LOCK_EX) === false) throw new RuntimeException('Weather cache is not writable.');
+        ninetime_weather_cache_store($db, $key, $cached, $now);
         return array('data' => $cached['data'], 'fetchedAt' => $cached['fetchedAt']);
     } finally {
-        flock($lock, LOCK_UN);
-        fclose($lock);
+        // Closing this dedicated connection also releases its GET_LOCK on every exit path.
+        mysqli_close($db);
     }
 }
 

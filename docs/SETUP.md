@@ -14,7 +14,6 @@ A környezeti változók felülírják a fájlban lévő értékeket:
 | `NINETIME_DB_HOST`, `NINETIME_DB_PORT` | Adatbázisszerver |
 | `NINETIME_DB_USER`, `NINETIME_DB_PASSWORD`, `NINETIME_DB_NAME` | Adatbázis-hitelesítés |
 | `NINETIME_WEATHER_USER_AGENT` | Az alkalmazás neve/verziója és elérhető kapcsolati URL, a MET Norway előírása szerint |
-| `NINETIME_WEATHER_CACHE_DIR` | Írható időjárás-gyorsítótár a dokumentumgyökéren kívül; alapérték: `web/var/weather/` |
 | `NINETIME_ADMIN_TOKEN` | A külön adminvégpontok hozzáférése; üresen letiltva |
 
 A fontok és a számjegyek az eredeti méreten vannak. A 7 számjegykészlet
@@ -39,10 +38,15 @@ tesztkonfigurációval. Nem használja a helyben megőrzött régi kulcsokat,
 a privát fájlok kizárását a dokumentumgyökérből, a letiltott adminvégpontokat,
 a régi időjárás-végpontok elérhetőségét, bemenetellenőrzését és a titokellenőrző pozitív kontrollját.
 Futtatja a telefonos kliens, a beállításmigráció, a szolgáltatói adatfeldolgozás,
-a mértékegységek és a gyorsítótár hálózat nélküli regressziós tesztjeit is.
+a mértékegységek és a MySQL-gyorsítótár regressziós tesztjeit is.
+A PHP-időjárásteszthez külön `ninetime_weather_test` vagy `ninetime_weather_test_*`
+nevű MySQL-adatbázis kell. A privát tesztkonfiguráció útvonala a
+`NINETIME_TEST_CONFIG_FILE` változóval adható meg, a szokásos `db` mezőkkel.
+A teszt az elkülönített adatbázis cache-tábláját kiüríti, az éles adatbázis nevét
+elutasítja. Valódi adatbázis-kapcsolatot használ, a szolgáltatói válaszok tesztadatok.
 
 Az ellenőrzések nem helyettesítik a Pebble SDK-val történő C-fordítást,
-az emulátoros/órás próbát vagy az adatbázissal és szolgáltatókkal végzett tesztet.
+az emulátoros/órás próbát vagy az éles szolgáltatókkal végzett tesztet.
 
 ## Időjárás — 2.00
 
@@ -80,18 +84,31 @@ szolgál; a feltételek: https://open-meteo.com/en/pricing és
 https://docs.api.met.no/doc/TermsOfService. Az adatok CC BY 4.0 forrásmegjelölése
 a beállítóoldalon és a JSON-válaszban is szerepel.
 
-Az időjárás adatbázis nélkül működik. PHP cURL és írható, privát cache-könyvtár kell.
+Az időjárás PHP cURL-t, MySQLi-t és a beállításokhoz is használt MySQL-adatbázist
+igényli. A JSON-válaszokat a `weather_cache` InnoDB-tábla tárolja.
+Új telepítésnél a `database/schema.sql` tartalmazza a táblát. Meglévő telepítésnél:
+
+~~~sh
+php tools/migrate-weather-cache.php /a/regi/privat/weather-cache
+~~~
+
+A parancs létrehozza a táblát és átemeli a 30 napnál frissebb, érvényes JSON-okat,
+az eredeti frissítési idővel. Könyvtár nélkül csak a táblát hozza létre.
+Ismételten is futtatható, a frissebb adatbázis-választ megőrzi.
+A régi fájlokat az import után, az adatbázisos kiszolgálás ellenőrzésével lehet archiválni.
+A futó kiszolgáló a `weather.cache_dir` és `NINETIME_WEATHER_CACHE_DIR`
+korábbi értékeit már nem használja.
 A `weather.user_agent` alapértéke a NineTime nyilvános GitHub-projektjére mutat;
 saját telepítésnél adj meg valóban elérhető projekt- vagy kapcsolati címet.
 A szerver csak a két szolgáltató és a városkereső rögzített HTTPS-címeit hívhatja,
 legalább 15 perces gyorsítótárral. A MET `Expires` és `Last-Modified` fejléceit
 figyelembe veszi; a koordinátákat négy tizedesre kerekíti.
 
-A cache-lekérések `rand(0, 999) === 0` esetén takarítást indítanak. Ez a 30 napja
-nem frissült JSON-okat és a hozzájuk tartozó zárolási fájlokat törli; a JSON nélküli,
-30 napnál régebbi zárolási fájlokat is eltávolítja. Az éppen használt bejegyzéseket
-kihagyja. A `.cleanup.lock` a párhuzamos takarítást és a zárolási fájlok törlését
-hangolja össze. A takarítás a lekérések részeként fut, külön időzítés nem szükséges.
+A cache-lekérések `rand(0, 999) === 0` esetén az adatbázisból törlik a 30 napja
+nem frissült sorokat. A törlés az indexelt `updated_at` mezőt használja.
+Az azonos lekérések összehangolását MySQL `GET_LOCK` végzi, a kapcsolat bezárása
+hibánál is feloldja a zárolást. A frissítés egyetlen atomi beszúrás/frissítés.
+Ha a takarítás közben egy régi sor törlődik, a futó frissítés újra létrehozza.
 
 A telefon GPS-t használ, vagy a beállítóoldalon kiválasztott város koordinátáit.
 A városkereső Open-Meteo / GeoNames alapú. A jelenlegi adatok és a következő 24 óra
@@ -102,8 +119,7 @@ megmaradnak. A Gadgetbridge a saját időjárás-beállításait használja.
 A régi szolgáltatók, az adatbázisos kulcskiosztás, kulcsváltogatás, fejlesztői kulcsot használó
 kerülőút és az időjárás-statisztika kikerült. A 2.00-s telefonos kód a régi beállításokból
 Open-Meteóra és telefonos GPS-re vált; a rögzített várost újra ki kell választani.
-A friss séma már nem hoz létre időjárás-táblákat. Meglévő adatbázis régi tábláit
-ez a forrásmódosítás nem törli automatikusan.
+A friss séma az új `weather_cache` gyorsítótárat tartalmazza.
 
 A már telepített, közvetlen OpenWeather-hívást használó Fitbit-kliensekhez a
 `getapikey_owm.php` külön engedélyezhető. A privát `config.local.php` fájlban a

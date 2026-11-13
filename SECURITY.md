@@ -45,5 +45,6 @@ Adminisztrátori hozzáféréshez a szerveroldali `admin_token` beállítás és
 A 2.00 időjárásához nincs szolgáltatói kulcs. A `weather.php` csak rögzített
 szolgáltatói HTTPS-címeket kér le. A régi API-URL-eket csak paraméterként elemzi;
 tetszőleges továbbítandó URL-t nem fogad el.
-A gyorsítótár a dokumentumgyökéren kívül van, és nem kerül Gitbe.
+A gyorsítótár a privát MySQL-adatbázis `weather_cache` táblájában van.
+A mentett válaszok és adatbázismentések nem kerülnek Gitbe.
 A kliensbeállítások migrációja eltávolítja a korábbi időjáráskulcsokat és PIN-adatokat.

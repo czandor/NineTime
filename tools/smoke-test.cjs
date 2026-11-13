@@ -113,7 +113,7 @@ async function main() {
     }
     check(preview.body.includes('var actualVersion="2.04"'), 'Version 2.04 renders as valid JavaScript.');
     check(!preview.body.includes('weather-config-fetchnow'), 'Weather refresh checkbox removed.');
-    console.log('Smoke tests passed: ' + assertions + ' assertions. No external service was contacted.');
+    console.log('Smoke tests passed: ' + assertions + ' assertions. No weather service was contacted.');
   } finally {
     php.kill();
     if (php.exitCode === null) await new Promise(resolve => { php.once('exit', resolve); setTimeout(resolve, 1500); });

@@ -23,7 +23,6 @@ function ninetime_config($name, $fallback = null) {
             'NINETIME_DB_PASSWORD' => array('db', 'password'),
             'NINETIME_DB_NAME' => array('db', 'database'),
             'NINETIME_WEATHER_USER_AGENT' => array('weather', 'user_agent'),
-            'NINETIME_WEATHER_CACHE_DIR' => array('weather', 'cache_dir'),
             'NINETIME_LOCATION_DIR' => array('weather', 'location_dir'),
             'NINETIME_LEGACY_OWM_KEY' => array('weather', 'legacy_openweather_key'),
             'NINETIME_LEGACY_KEY_ENDPOINT_ENABLED' => array('legacy_key_endpoint_enabled'),

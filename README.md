@@ -120,7 +120,9 @@ The watchface still targets the original `aplite`, `basalt`, `chalk`, and `diori
 
 ## Run the web configurator
 
-Weather requires PHP `curl` and a writable private `web/var/weather/` cache directory.
+Weather requires PHP `curl`, `mysqli`, and the private MySQL `weather_cache` table.
+Apply it to an existing database with `php tools/migrate-weather-cache.php`.
+Pass the old cache directory as an argument to import existing JSON responses.
 GPS city names also require the private gazetteer: run `python tools/update-locations.py` once.
 Set `weather.location_dir` (or `NINETIME_LOCATION_DIR`) if it is stored elsewhere. See [setup](docs/SETUP.md).
 For saved configurations and custom information scripts, import `database/schema.sql` into an
@@ -133,8 +135,8 @@ php -S 127.0.0.1:8000 -t web/public
 
 Open `http://127.0.0.1:8000/pebble/ninetime/`. The document root must be **`web/public`**,
 so the private configuration remains outside the served directory.
-The configurator preview and weather work without a database; saved configurations and
-custom information requests require one.
+The configurator preview can render before the database is configured. Weather, saved
+configurations and custom information requests use the configured MySQL database.
 
 ## Secrets and source preservation
 

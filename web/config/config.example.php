@@ -13,7 +13,6 @@ return array(
     ),
     'weather' => array(
         'user_agent' => 'NineTime/2.04 (https://github.com/czandor/NineTime)',
-        'cache_dir' => __DIR__ . '/../var/weather',
         'location_dir' => __DIR__ . '/../var/locations',
         'cache_seconds' => 900,
         'legacy_provider' => 'metno',

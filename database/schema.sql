@@ -53,3 +53,11 @@ ALTER TABLE `inforequests`
 
 ALTER TABLE `ninetime_settings`
   MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+
+CREATE TABLE IF NOT EXISTS `weather_cache` (
+  `cache_key` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  `payload` mediumtext NOT NULL,
+  `updated_at` bigint UNSIGNED NOT NULL,
+  PRIMARY KEY (`cache_key`),
+  KEY `updated_at` (`updated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
